@@ -1,43 +1,26 @@
 {
+    "$schema": "https://json.schemastore.org/tsconfig",
+    "display": "Node 16 + ESM + Strictest",
     "compilerOptions": {
-        "target": "ES2021",
         "lib": [
-            "ES2021"
+            "es2021"
         ],
-        "types": [
-            "node"
-        ],
-        "module": "NodeNext",
-        "declaration": true,
-        "noImplicitAny": true,
-        "removeComments": true,
-        "experimentalDecorators": true,
-        "outDir": "./build",
-        "sourceMap": true,
-        "noEmitOnError": true,
-        "esModuleInterop": true,
-        "forceConsistentCasingInFileNames": true,
+        "module": "es2022",
+        "target": "es2021",
         "strict": true,
-        "noEmit": false,
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "forceConsistentCasingInFileNames": true,
         "moduleResolution": "node",
-        "isolatedModules": true,
-        "resolveJsonModule": true,
+        "allowUnusedLabels": false,
+        "allowUnreachableCode": false,
+        "exactOptionalPropertyTypes": true,
+        "noFallthroughCasesInSwitch": true,
+        "noImplicitOverride": true,
+        "noImplicitReturns": true,
+        "noUncheckedIndexedAccess": true,
         "noUnusedLocals": true,
         "noUnusedParameters": true,
-        "noImplicitReturns": true,
-        "noImplicitThis": true,
-        "strictNullChecks": true,
-        "suppressImplicitAnyIndexErrors": true,
-        "allowSyntheticDefaultImports": true,
-        "skipLibCheck": true
-    },
-    "include": [
-        "**/*.ts",
-        "**/*.tsx",
-        "types.d.ts"
-    ],
-    "exclude": [
-        "node_modules",
-        "./build/**/*"
-    ]
+        "checkJs": true
+    }
 }

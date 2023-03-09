@@ -1,23 +1,19 @@
-import dotenv from 'dotenv';
-import { env } from 'process';
-import { WarpSdk, getContractAddress, getNetworkName } from '@terra-money/warp-sdk';
+import { WarpSdk, getContractAddress, getNetworkName, warp_controller } from '@terra-money/warp-sdk';
 import { LCDClient, MnemonicKey, Wallet, WebSocketClient } from '@terra-money/terra.js';
 import { createClient } from 'redis';
 import { executeJob, saveJob } from './util';
-import { warp_controller } from './types/contracts/'
+import { CHAIN_ID, LCD_ENDPOINT, MNEMONIC_KEY, SETTEN_KEY, SETTEN_PROJECT } from './env';
 
 const main = async () => {
     const redis_client = createClient();
     redis_client.on('error', (err) => console.log('Redis Client Error', err));
     await redis_client.connect();
 
-    dotenv.config();
-
     const lcd = new LCDClient({
-        URL: env.LCD_ENDPOINT!,
-        chainID: env.CHAIN_ID!,
+        URL: LCD_ENDPOINT,
+        chainID: CHAIN_ID,
     });
-    const mnemonic_key = new MnemonicKey({ mnemonic: env.MNEMONIC_KEY });
+    const mnemonic_key = new MnemonicKey({ mnemonic: MNEMONIC_KEY });
     const wallet = new Wallet(lcd, mnemonic_key);
     const options = {
         lcd,
@@ -28,7 +24,7 @@ const main = async () => {
     const warp_sdk = new WarpSdk(wallet, options.contractAddress!);
 
     const terraWS = new WebSocketClient(
-        `wss://rpc.pisco.terra.setten.io/${env.SETTEN_PROJECT}/websocket?key=${env.SETTEN_KEY}`
+        `wss://rpc.pisco.terra.setten.io/${SETTEN_PROJECT}/websocket?key=${SETTEN_KEY}`
     );
 
     const tmQueryCreateJob = {

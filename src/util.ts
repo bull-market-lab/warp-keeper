@@ -1,9 +1,12 @@
+// @ts-ignore
 import { SkipBundleClient } from '@skip-mev/skipjs';
-import { Coins, CreateTxOptions, MsgExecuteContract, Wallet } from '@terra-money/terra.js';
+// @ts-ignore
+import { Coins, CreateTxOptions, LCDClient, MnemonicKey, MsgExecuteContract, MsgRevokeAuthorization, Wallet } from '@terra-money/terra.js';
 import axios from 'axios';
-import { WarpSdk } from '@terra-money/warp-sdk';
-import { warp_controller } from './types/contracts/'
+import { getContractAddress, getNetworkName, WarpSdk, warp_controller } from '@terra-money/warp-sdk';
 import { createClient } from 'redis';
+import { CHAIN_ID_LOCALTERRA } from './constants';
+import { CHAIN_ID, LCD_ENDPOINT, MNEMONIC_KEY, WARP_CONTROLLER_ADDRESS } from './env';
 
 type redisClientType = ReturnType<typeof createClient>
 
@@ -25,9 +28,11 @@ export const saveJob = async (job: warp_controller.Job, redis_client: redisClien
     }
 };
 
-function executeMsg<T extends {}>(sender: string, contract: string, msg: T, coins?: Coins.Input) {
+export function executeMsg<T extends {}>(sender: string, contract: string, msg: T, coins?: Coins.Input) {
     return new MsgExecuteContract(sender, contract, msg, coins);
 }
+
+// @ts-ignore
 export const executeJob = async (wallet: Wallet, warp_sdk: WarpSdk, job_id: string, private_key: Uint8Array) => {
     const msg = executeMsg<Extract<warp_controller.ExecuteMsg, { execute_job: warp_controller.ExecuteJobMsg }>>(
         wallet.key.accAddress,
@@ -47,14 +52,15 @@ export const executeJob = async (wallet: Wallet, warp_sdk: WarpSdk, job_id: stri
         return await wallet.lcd.tx.broadcast(tx);
 
         // with skip
-        const txString = Buffer.from(tx.toBytes()).toString('base64');
-        const DESIRED_HEIGHT_FOR_BUNDLE = 0;
-        const skipBundleClient = new SkipBundleClient('http://pisco-1-api.skip.money');
-        const bundle = await skipBundleClient.signBundle([txString], private_key);
-        return await skipBundleClient.sendBundle(bundle, DESIRED_HEIGHT_FOR_BUNDLE, true);
+        // const txString = Buffer.from(tx.toBytes()).toString('base64');
+        // const DESIRED_HEIGHT_FOR_BUNDLE = 0;
+        // const skipBundleClient = new SkipBundleClient('http://pisco-1-api.skip.money');
+        // const bundle = await skipBundleClient.signBundle([txString], private_key);
+        // return await skipBundleClient.sendBundle(bundle, DESIRED_HEIGHT_FOR_BUNDLE, true);
     } catch (error) {
         // console.log({ error });
         if (axios.isAxiosError(error)) {
+            // @ts-ignore
             return `Code=${error.response!.data!['code']} Message=${error.response!.data!['message']}`;
         }
         console.log('error broadcast');
@@ -72,10 +78,10 @@ export const findExecutableJobs = async (redis_client: redisClientType, wallet: 
         for (let i = all_job_ids.length - 1; i >= 0; i--) {
             const job_id = all_job_ids[i];
 
-            const condition_s = await redis_client.hGet('conditions', job_id);
+            const condition_s = await redis_client.hGet('conditions', job_id!);
             const job_condition = JSON.parse(condition_s!);
 
-            const var_s = await redis_client.hGet('vars', job_id);
+            const var_s = await redis_client.hGet('vars', job_id!);
             const job_variables = JSON.parse(var_s!).map((job_var: string) => JSON.parse(job_var));
 
             let isActive = false;
@@ -90,8 +96,8 @@ export const findExecutableJobs = async (redis_client: redisClientType, wallet: 
             }
             if (isActive) {
                 console.log(`Find active job ${job_id} from redis, try executing!`);
-                console.log(await executeJob(wallet, warp_sdk, job_id, private_key));
-                await redis_client.sRem('ids', job_id);
+                console.log(await executeJob(wallet, warp_sdk, job_id!, private_key));
+                await redis_client.sRem('ids', job_id!);
             } else {
                 // console.log("inactive")
             }
@@ -119,11 +125,36 @@ export const saveAllJobs = async (redis_client: redisClientType, warp_sdk: WarpS
             });
 
             const lastJobInPage = jobs[jobs.length - 1];
-            console.log(`LAST JOB IN PAGE: ${lastJobInPage.id}`);
-            start_after = { _0: lastJobInPage.reward, _1: lastJobInPage.id };
+            console.log(`LAST JOB IN PAGE: ${lastJobInPage?.id}`);
+            start_after = { _0: lastJobInPage?.reward!, _1: lastJobInPage?.id! };
         } catch (e) {
             console.log(e);
             throw new Error('unknown error when saving pending jobs to redis');
         }
     }
 };
+
+export const getLCD = () => {
+    return new LCDClient({
+        URL: LCD_ENDPOINT,
+        chainID: CHAIN_ID,
+    });
+}
+
+export const getMnemonicKey = () => {
+    return new MnemonicKey({ mnemonic: MNEMONIC_KEY });
+}
+
+export const getWallet = () => {
+    const lcd = getLCD();
+    const mnemonic_key = getMnemonicKey();
+    return new Wallet(lcd, mnemonic_key);
+}
+
+export const initWarpSdk = () => {
+    const lcd = getLCD();
+    const wallet = getWallet();
+    const localterraWarpControllerAddress = WARP_CONTROLLER_ADDRESS!
+    const contractAddress = CHAIN_ID === CHAIN_ID_LOCALTERRA ? localterraWarpControllerAddress : getContractAddress(getNetworkName(lcd.config.chainID), 'warp-controller')
+    return new WarpSdk(wallet, contractAddress!);
+}

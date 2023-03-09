@@ -1,9 +1,8 @@
-import dotenv from 'dotenv';
-import { env } from 'process';
 import { LCDClient, MnemonicKey, Wallet } from '@terra-money/terra.js';
 import { saveAllJobs, findExecutableJobs } from './util';
 import { createClient } from 'redis';
 import { WarpSdk, getContractAddress, getNetworkName } from '@terra-money/warp-sdk';
+import { CHAIN_ID, LCD_ENDPOINT, MNEMONIC_KEY } from './env';
 
 const run = async () => {
     type redisClientType = ReturnType<typeof createClient>
@@ -11,13 +10,11 @@ const run = async () => {
     redis_client.on('error', (err) => console.log('Redis Client Error', err));
     await redis_client.connect();
 
-    dotenv.config();
-
     const lcd = new LCDClient({
-        URL: env.LCD_ENDPOINT!,
-        chainID: env.CHAIN_ID!,
+        URL: LCD_ENDPOINT,
+        chainID: CHAIN_ID,
     });
-    const mnemonic_key = new MnemonicKey({ mnemonic: env.MNEMONIC_KEY });
+    const mnemonic_key = new MnemonicKey({ mnemonic: MNEMONIC_KEY });
     const wallet = new Wallet(lcd, mnemonic_key);
     const options = {
         lcd,
