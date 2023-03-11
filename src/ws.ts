@@ -1,34 +1,26 @@
-import { WarpSdk, getContractAddress, getNetworkName, warp_controller } from '@terra-money/warp-sdk';
-import { LCDClient, MnemonicKey, Wallet, WebSocketClient } from '@terra-money/terra.js';
+import { warp_controller } from '@terra-money/warp-sdk';
+import { WebSocketClient } from '@terra-money/terra.js';
 import { createClient } from 'redis';
-import { executeJob, saveJob } from './util';
-import { CHAIN_ID, LCD_ENDPOINT, MNEMONIC_KEY, SETTEN_KEY, SETTEN_PROJECT } from './env';
+import { executeJob, saveJob } from './warp_helper';
+import { getMnemonicKey, getWallet, initWarpSdk } from './util';
 
 const main = async () => {
-    const redis_client = createClient();
-    redis_client.on('error', (err) => console.log('Redis Client Error', err));
-    await redis_client.connect();
+    const redisClient = createClient();
+    redisClient.on('error', (err) => console.log('Redis Client Error', err));
+    await redisClient.connect();
 
-    const lcd = new LCDClient({
-        URL: LCD_ENDPOINT,
-        chainID: CHAIN_ID,
-    });
-    const mnemonic_key = new MnemonicKey({ mnemonic: MNEMONIC_KEY });
-    const wallet = new Wallet(lcd, mnemonic_key);
-    const options = {
-        lcd,
-        wallet,
-        contractAddress: getContractAddress(getNetworkName(lcd.config.chainID), 'warp-controller'),
-    };
+    const mnemonicKey = getMnemonicKey()
+    const wallet = getWallet()
 
-    const warp_sdk = new WarpSdk(wallet, options.contractAddress!);
+    const warpSdk = initWarpSdk();
 
     const terraWS = new WebSocketClient(
-        `wss://rpc.pisco.terra.setten.io/${SETTEN_PROJECT}/websocket?key=${SETTEN_KEY}`
+        // `wss://rpc.pisco.terra.setten.io/${SETTEN_PROJECT}/websocket?key=${SETTEN_KEY}`
+        'ws://localhost:26657/websocket'
     );
 
     const tmQueryCreateJob = {
-        'wasm._contract_address': warp_sdk.contractAddress,
+        'wasm._contract_address': warpSdk.contractAddress,
         'wasm.action': 'create_job',
     };
 
@@ -46,7 +38,7 @@ const main = async () => {
                     }
                     const job_id = attribute.value;
                     console.log(`new job_id ${job_id}`);
-                    const exist = await redis_client.sIsMember('ids', job_id);
+                    const exist = await redisClient.sIsMember('ids', job_id);
                     if (exist) {
                         console.log('job already in redis');
                     } else {
@@ -55,25 +47,25 @@ const main = async () => {
 
                         let job: warp_controller.Job;
                         try {
-                            job = await warp_sdk.job(job_id);
+                            job = await warpSdk.job(job_id);
                         } catch (e) {
                             console.log('error getting job, probably due to rpc not updated to latest state', e);
                             return
                         }
 
                         // console.log('save job to redis');
-                        // saveJob(job, redis_client);
+                        // saveJob(job, redisClient);
 
-                        const isActive = await warp_sdk.condition.resolveCond(job.condition, job.vars);
+                        const isActive = await warpSdk.condition.resolveCond(job.condition, job.vars);
                         if (isActive) {
                             console.log('executing now');
                             // sleep half block, setten rpc reports job not found
                             // await new Promise((resolve) => setTimeout(resolve, 10000));
-                            console.log(await executeJob(wallet, warp_sdk, job.id, mnemonic_key.privateKey));
+                            console.log(await executeJob(wallet, warpSdk, job.id, mnemonicKey.privateKey));
                             console.log('done executing');
                         } else {
                             console.log('not executable, save to redis');
-                            saveJob(job, redis_client);
+                            saveJob(job, redisClient);
                         }
                     }
                 });
