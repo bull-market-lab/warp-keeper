@@ -1,9 +1,14 @@
-import { getWallet, initWarpSdk } from '../../util';
+// @ts-nocheck
+import { getCurrentBlockHeight, getLCD, getMnemonicKey, getWallet, initWarpSdk } from '../../util';
 import { warp_controller } from '@terra-money/warp-sdk'
 // import { executeMsg } from '../../warp_helper';
 
-const wallet = getWallet()
-const warpSdk = initWarpSdk();
+const mnemonicKey = getMnemonicKey()
+const lcd = getLCD()
+const wallet = getWallet(lcd, mnemonicKey)
+const warpSdk = initWarpSdk(lcd, wallet);
+const owner = wallet.key.accAddress
+
 const condition: warp_controller.Condition = {
     expr: {
         block_height: {
@@ -13,11 +18,22 @@ const condition: warp_controller.Condition = {
     }
 }
 
+const delayBlock = 2
+const blockHeightDelay = BigInt(await getCurrentBlockHeight()) + BigInt(delayBlock)
+const conditionDelay: warp_controller.Condition = {
+    expr: {
+        block_height: {
+            comparator: blockHeightDelay.toString(),
+            op: 'gt'
+        }
+    }
+}
+
 const msg = {
     bank: {
         send: {
             amount: [{ denom: "uluna", amount: "100000" }],
-            to_address: wallet.key.accAddress,
+            to_address: owner,
         },
     },
 }
@@ -60,8 +76,33 @@ const createJobMsg = {
     msgs: [msg],
 };
 
-warpSdk.createJob(wallet.key.accAddress, createJobMsg).then(txInfo => {
-    console.log(txInfo)
+const createJobMsgDelay = {
+    condition: conditionDelay,
+    name: 'test_delay',
+    recurring: false,
+    requeue_on_evict: false,
+    vars: [],
+    reward: '1000000', // 1 LUNA
+    msgs: [msg],
+};
+
+warpSdk.createJob(owner, createJobMsg).then(txInfo => {
+    // console.log(txInfo)
+    console.log('created job')
 }).catch(err => {
     throw err
+}).then(_ => {
+    // warpSdk.createJob(owner, createJobMsgDelay).then(txInfo => {
+    //     // console.log(txInfo)
+    //     console.log('created delay job')
+    // }).catch(err => {
+    //     throw err
+    // })
 })
+
+// warpSdk.createJob(owner, createJobMsgDelay).then(txInfo => {
+//     // console.log(txInfo)
+//     console.log('created delay job')
+// }).catch(err => {
+//     throw err
+// })

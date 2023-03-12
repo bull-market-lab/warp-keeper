@@ -1,14 +1,11 @@
-// @ts-ignore
+// @ts-nocheck
 import { SkipBundleClient } from '@skip-mev/skipjs';
-// @ts-ignore
 import { Coins, CreateTxOptions, LCDClient, MnemonicKey, MsgExecuteContract, MsgRevokeAuthorization, Wallet } from '@terra-money/terra.js';
 import axios from 'axios';
 import { warp_controller, WarpSdk } from '@terra-money/warp-sdk';
-import { createClient } from 'redis';
+import { MyRedisClientType } from './util';
 
-type redisClientType = ReturnType<typeof createClient>
-
-export const saveJob = async (job: warp_controller.Job, redisClient: redisClientType) => {
+export const saveJob = async (job: warp_controller.Job, redisClient: MyRedisClientType) => {
     // limit to 0.001 luna
     let reward = Number(job.reward.substring(0, job.reward.length - 3));
     if (reward === 0) {
@@ -30,7 +27,6 @@ export function executeMsg<T extends {}>(sender: string, contract: string, msg: 
     return new MsgExecuteContract(sender, contract, msg, coins);
 }
 
-// @ts-ignore
 export const executeJob = async (wallet: Wallet, warpSdk: WarpSdk, jobId: string, private_key: Uint8Array) => {
     const msg = executeMsg<Extract<warp_controller.ExecuteMsg, { execute_job: warp_controller.ExecuteJobMsg }>>(
         wallet.key.accAddress,
@@ -58,16 +54,14 @@ export const executeJob = async (wallet: Wallet, warpSdk: WarpSdk, jobId: string
     } catch (error) {
         // console.log({ error });
         if (axios.isAxiosError(error)) {
-            // @ts-ignore
             return `Code=${error.response!.data!['code']} Message=${error.response!.data!['message']}`;
         }
         console.log('error broadcast');
-        // @ts-ignore
         return error.message;
     }
 };
 
-export const findExecutableJobs = async (redisClient: redisClientType, wallet: Wallet, warpSdk: WarpSdk, private_key: Uint8Array) => {
+export const findExecutableJobs = async (redisClient: MyRedisClientType, wallet: Wallet, warpSdk: WarpSdk, private_key: Uint8Array) => {
     let counter = 0;
     while (true) {
         console.log(`pending jobs count ${await redisClient.sCard('ids')}`);
@@ -107,7 +101,7 @@ export const findExecutableJobs = async (redisClient: redisClientType, wallet: W
     }
 };
 
-export const saveAllJobs = async (redisClient: redisClientType, warpSdk: WarpSdk) => {
+export const saveAllJobs = async (redisClient: MyRedisClientType, warpSdk: WarpSdk) => {
     let startAfter: warp_controller.JobIndex | null = null;
     const limit = 50;
     while (true) {
@@ -131,3 +125,41 @@ export const saveAllJobs = async (redisClient: redisClientType, warpSdk: WarpSdk
         }
     }
 };
+
+export const processEvent = async (
+    event,
+    redisClient: MyRedisClientType,
+    mnemonicKey: MnemonicKey,
+    wallet: Wallet,
+    warpSdk: WarpSdk
+) => {
+    const jobId = event.attributes.filter(attribute => attribute.hasOwnProperty('job_id'))[0].value;
+    console.log(`new jobId ${jobId}`);
+    const exist = await redisClient.sIsMember('ids', jobId);
+    if (exist) {
+        console.log('job already in redis');
+    } else {
+        console.log('sleep half block in case rpc has not synced to latest state yet');
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
+        warpSdk.job(jobId).then((job: warp_controller.Job) => {
+            warpSdk.condition.resolveCond(job.condition, job.vars).then((isActive: Boolean) => {
+                if (isActive) {
+                    console.log('executing now');
+                    // sleep half block, setten rpc reports job not found
+                    // await new Promise((resolve) => setTimeout(resolve, 10000));
+                    console.log(await executeJob(wallet, warpSdk, jobId.id, mnemonicKey.privateKey));
+                    console.log('done executing');
+                } else {
+                    console.log('not executable, save to redis');
+                    saveJob(job, redisClient);
+                }
+            }).catch(err => {
+                throw err
+            })
+        }).catch(err => {
+            console.log('error getting job, probably due to rpc not updated to latest state', err);
+            throw err
+        })
+    }
+}

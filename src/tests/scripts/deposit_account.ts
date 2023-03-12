@@ -1,10 +1,12 @@
 import { MsgSend } from '@terra-money/terra.js';
 import { warp_controller } from '@terra-money/warp-sdk';
 // import { getContractAddress, getNetworkName, WarpSdk } from '@terra-money/warp-sdk';
-import { getWallet, initWarpSdk } from '../../util';
+import { getLCD, getMnemonicKey, getWallet, initWarpSdk } from '../../util';
 
-const wallet = getWallet()
-const warpSdk = initWarpSdk();
+const mnemonicKey = getMnemonicKey()
+const lcd = getLCD()
+const wallet = getWallet(lcd, mnemonicKey)
+const warpSdk = initWarpSdk(lcd, wallet);
 
 const warpAccountAddress = await warpSdk.account(wallet.key.accAddress).then((warp_account: warp_controller.Account) => {
     return warp_account.account
@@ -15,7 +17,7 @@ const warpAccountAddress = await warpSdk.account(wallet.key.accAddress).then((wa
 const send = new MsgSend(
     wallet.key.accAddress,
     warpAccountAddress,
-    { uluna: 1_000_000 }, // 1 LUNA = 10^6 uluna
+    { uluna: 100_000_000 }, // 1 LUNA = 10^6 uluna, deposit 100 LUNA
 );
 
 const tx = await wallet.createAndSignTx({ msgs: [send] });

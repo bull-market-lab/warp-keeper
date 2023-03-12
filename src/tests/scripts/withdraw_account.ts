@@ -1,9 +1,12 @@
 import { MsgExecuteContract } from '@terra-money/terra.js';
 import { warp_controller } from '@terra-money/warp-sdk';
-import { getWallet, initWarpSdk } from '../../util';
+import { getLCD, getMnemonicKey, getWallet, initWarpSdk } from '../../util';
 
-const wallet = getWallet()
-const warpSdk = initWarpSdk();
+const mnemonicKey = getMnemonicKey()
+const lcd = getLCD()
+const wallet = getWallet(lcd, mnemonicKey)
+const warpSdk = initWarpSdk(lcd, wallet);
+
 
 const warpAccountAddress = await warpSdk.account(wallet.key.accAddress).then((warp_account: warp_controller.Account) => {
     return warp_account.account
