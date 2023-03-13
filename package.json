@@ -29,10 +29,5 @@
     "withdraw-account": "ts-node --esm --experimentalSpecifierResolution node src/tests/scripts/withdraw_account.ts",
     "create-job": "ts-node --esm --experimentalSpecifierResolution node src/tests/scripts/create_job.ts"
   },
-  "lint-staged": {
-    "./src/{**/*,*}.{ts,tsx}": [
-      "prettier --write"
-    ]
-  },
   "type": "module"
 }

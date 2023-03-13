@@ -2,31 +2,38 @@ import { MsgExecuteContract } from '@terra-money/terra.js';
 import { warp_controller } from '@terra-money/warp-sdk';
 import { getLCD, getMnemonicKey, getWallet, initWarpSdk } from '../../util';
 
-const mnemonicKey = getMnemonicKey()
-const lcd = getLCD()
-const wallet = getWallet(lcd, mnemonicKey)
+const mnemonicKey = getMnemonicKey();
+const lcd = getLCD();
+const wallet = getWallet(lcd, mnemonicKey);
 const warpSdk = initWarpSdk(lcd, wallet);
 
-const warpAccountAddress = await warpSdk.account(wallet.key.accAddress).then((warp_account: warp_controller.Account) => {
-    return warp_account.account
-}).catch(err => {
-    console.log(err)
-    throw err
-})
+const warpAccountAddress = await warpSdk
+  .account(wallet.key.accAddress)
+  .then((warp_account: warp_controller.Account) => {
+    return warp_account.account;
+  })
+  .catch((err) => {
+    console.log(err);
+    throw err;
+  });
 
 const executeMsg = {
-    msgs: [
-        {
-            bank: {
-                send: {
-                    amount: [{ denom: "uluna", amount: "100000" }],
-                    to_address: wallet.key.accAddress,
-                },
-            },
-        }
-    ]
-}
-const contractSend = new MsgExecuteContract(wallet.key.accAddress, warpAccountAddress, executeMsg)
+  msgs: [
+    {
+      bank: {
+        send: {
+          amount: [{ denom: 'uluna', amount: '100000' }],
+          to_address: wallet.key.accAddress,
+        },
+      },
+    },
+  ],
+};
+const contractSend = new MsgExecuteContract(
+  wallet.key.accAddress,
+  warpAccountAddress,
+  executeMsg
+);
 
 const tx = await wallet.createAndSignTx({ msgs: [contractSend] });
 const result = await wallet.lcd.tx.broadcast(tx);

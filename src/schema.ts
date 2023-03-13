@@ -1,13 +1,13 @@
 export type TMEventAttribute = {
-    key: string,
-    value: string
-}
+  key: string;
+  value: string;
+};
 
 export type TMEvent = {
-    type: string,
-    attributes: TMEventAttribute[]
-}
+  type: string;
+  attributes: TMEventAttribute[];
+};
 
 export type TMLog = {
-    events: TMEvent[]
-}
+  events: TMEvent[];
+};

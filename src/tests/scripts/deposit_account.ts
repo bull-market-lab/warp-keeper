@@ -3,21 +3,24 @@ import { warp_controller } from '@terra-money/warp-sdk';
 // import { getContractAddress, getNetworkName, WarpSdk } from '@terra-money/warp-sdk';
 import { getLCD, getMnemonicKey, getWallet, initWarpSdk } from '../../util';
 
-const mnemonicKey = getMnemonicKey()
-const lcd = getLCD()
-const wallet = getWallet(lcd, mnemonicKey)
+const mnemonicKey = getMnemonicKey();
+const lcd = getLCD();
+const wallet = getWallet(lcd, mnemonicKey);
 const warpSdk = initWarpSdk(lcd, wallet);
 
-const warpAccountAddress = await warpSdk.account(wallet.key.accAddress).then((warp_account: warp_controller.Account) => {
-    return warp_account.account
-}).catch(err => {
-    throw err
-})
+const warpAccountAddress = await warpSdk
+  .account(wallet.key.accAddress)
+  .then((warp_account: warp_controller.Account) => {
+    return warp_account.account;
+  })
+  .catch((err) => {
+    throw err;
+  });
 
 const send = new MsgSend(
-    wallet.key.accAddress,
-    warpAccountAddress,
-    { uluna: 100_000_000 }, // 1 LUNA = 10^6 uluna, deposit 100 LUNA
+  wallet.key.accAddress,
+  warpAccountAddress,
+  { uluna: 100_000_000 } // 1 LUNA = 10^6 uluna, deposit 100 LUNA
 );
 
 const tx = await wallet.createAndSignTx({ msgs: [send] });

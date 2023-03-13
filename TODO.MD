@@ -10,6 +10,8 @@
 
     potential solution: periodically empty redis and refetch all jobs from full node?
 - is it possible to put ws into bot
+- more error handling
+- split job queue into multiple queues by job status
 
 ## Monitor
 - integrate grafana metrics
