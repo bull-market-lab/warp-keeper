@@ -7,7 +7,6 @@ const lcd = getLCD()
 const wallet = getWallet(lcd, mnemonicKey)
 const warpSdk = initWarpSdk(lcd, wallet);
 
-
 const warpAccountAddress = await warpSdk.account(wallet.key.accAddress).then((warp_account: warp_controller.Account) => {
     return warp_account.account
 }).catch(err => {

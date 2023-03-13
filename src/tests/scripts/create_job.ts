@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { getCurrentBlockHeight, getLCD, getMnemonicKey, getWallet, initWarpSdk } from '../../util';
 import { warp_controller } from '@terra-money/warp-sdk'
 // import { executeMsg } from '../../warp_helper';
@@ -76,6 +75,7 @@ const createJobMsg = {
     msgs: [msg],
 };
 
+// @ts-ignore
 const createJobMsgDelay = {
     condition: conditionDelay,
     name: 'test_delay',
@@ -87,7 +87,7 @@ const createJobMsgDelay = {
 };
 
 warpSdk.createJob(owner, createJobMsg).then(txInfo => {
-    // console.log(txInfo)
+    console.log(txInfo)
     console.log('created job')
 }).catch(err => {
     throw err

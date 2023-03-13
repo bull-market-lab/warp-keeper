@@ -1,9 +1,13 @@
-// @ts-nocheck
+// @ts-ignore
 import { SkipBundleClient } from '@skip-mev/skipjs';
-import { Coins, CreateTxOptions, LCDClient, MnemonicKey, MsgExecuteContract, MsgRevokeAuthorization, Wallet } from '@terra-money/terra.js';
+import { Coins, CreateTxOptions, MnemonicKey, MsgExecuteContract, Wallet } from '@terra-money/terra.js';
 import axios from 'axios';
 import { warp_controller, WarpSdk } from '@terra-money/warp-sdk';
-import { MyRedisClientType } from './util';
+// @ts-ignore
+import { getValueByKeyInAttributes, MyRedisClientType } from './util';
+import { TMEvent, TMEventAttribute } from 'schema';
+// @ts-ignore
+import { EVENT_ATTRIBUTE_KEY_ACTION, EVENT_ATTRIBUTE_KEY_JOB_CONDITION, EVENT_ATTRIBUTE_KEY_JOB_ID, EVENT_ATTRIBUTE_VALUE_CREATE_JOB, EVENT_ATTRIBUTE_VALUE_DELETE_JOB, EVENT_ATTRIBUTE_VALUE_EVICT_JOB, EVENT_ATTRIBUTE_VALUE_EXECUTE_JOB, EVENT_ATTRIBUTE_VALUE_UPDATE_JOB } from 'constant';
 
 export const saveJob = async (job: warp_controller.Job, redisClient: MyRedisClientType) => {
     // limit to 0.001 luna
@@ -27,7 +31,19 @@ export function executeMsg<T extends {}>(sender: string, contract: string, msg: 
     return new MsgExecuteContract(sender, contract, msg, coins);
 }
 
-export const executeJob = async (wallet: Wallet, warpSdk: WarpSdk, jobId: string, private_key: Uint8Array) => {
+export const batchExecuteJob = async () => { }
+
+export const executeJob = async (
+    jobId: string,
+    wallet: Wallet,
+    // @ts-ignore
+    mnemonicKey: MnemonicKey,
+    warpSdk: WarpSdk,
+) => {
+    // using sdk
+    // warpSdk.executeJob(wallet.key.accAddress, jobId)
+
+    // manually
     const msg = executeMsg<Extract<warp_controller.ExecuteMsg, { execute_job: warp_controller.ExecuteJobMsg }>>(
         wallet.key.accAddress,
         warpSdk.contractAddress,
@@ -49,19 +65,22 @@ export const executeJob = async (wallet: Wallet, warpSdk: WarpSdk, jobId: string
         // const txString = Buffer.from(tx.toBytes()).toString('base64');
         // const DESIRED_HEIGHT_FOR_BUNDLE = 0;
         // const skipBundleClient = new SkipBundleClient('http://pisco-1-api.skip.money');
-        // const bundle = await skipBundleClient.signBundle([txString], private_key);
+        // const bundle = await skipBundleClient.signBundle([txString], mnemonicKey.privateKey);
         // return await skipBundleClient.sendBundle(bundle, DESIRED_HEIGHT_FOR_BUNDLE, true);
-    } catch (error) {
-        // console.log({ error });
-        if (axios.isAxiosError(error)) {
-            return `Code=${error.response!.data!['code']} Message=${error.response!.data!['message']}`;
+    } catch (err: any) {
+        if (axios.isAxiosError(err)) {
+            return err.response?.data;
         }
-        console.log('error broadcast');
-        return error.message;
+        return `unknown error: ${err}`
     }
 };
 
-export const findExecutableJobs = async (redisClient: MyRedisClientType, wallet: Wallet, warpSdk: WarpSdk, private_key: Uint8Array) => {
+export const findExecutableJobs = async (
+    redisClient: MyRedisClientType,
+    wallet: Wallet,
+    mnemonicKey: MnemonicKey,
+    warpSdk: WarpSdk
+) => {
     let counter = 0;
     while (true) {
         console.log(`pending jobs count ${await redisClient.sCard('ids')}`);
@@ -88,7 +107,7 @@ export const findExecutableJobs = async (redisClient: MyRedisClientType, wallet:
             }
             if (isActive) {
                 console.log(`Find active job ${jobId} from redis, try executing!`);
-                console.log(await executeJob(wallet, warpSdk, jobId!, private_key));
+                console.log(await executeJob(jobId!, wallet, mnemonicKey, warpSdk));
                 await redisClient.sRem('ids', jobId!);
             } else {
                 // console.log("inactive")
@@ -126,40 +145,105 @@ export const saveAllJobs = async (redisClient: MyRedisClientType, warpSdk: WarpS
     }
 };
 
-export const processEvent = async (
-    event,
+export const handleJobCreation = async (
+    jobId: string,
+    // @ts-ignore
+    attributes: TMEventAttribute[],
     redisClient: MyRedisClientType,
     mnemonicKey: MnemonicKey,
     wallet: Wallet,
     warpSdk: WarpSdk
 ) => {
-    const jobId = event.attributes.filter(attribute => attribute.hasOwnProperty('job_id'))[0].value;
-    console.log(`new jobId ${jobId}`);
     const exist = await redisClient.sIsMember('ids', jobId);
     if (exist) {
         console.log('job already in redis');
     } else {
-        console.log('sleep half block in case rpc has not synced to latest state yet');
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        // const conditionStr = getValueByKeyInAttributes(attributes, EVENT_ATTRIBUTE_KEY_JOB_CONDITION)
+        // const condition: warp_controller.Condition = JSON.parse(conditionStr)
+        // var is not logged, i have to get it from chain, so only get condition from log is useless
+        // const varStr = getValueByKeyInAttributes(attributes, )
+
+        // console.log('sleep half block in case rpc has not synced to latest state yet');
+        // await new Promise((resolve) => setTimeout(resolve, 1000));
 
         warpSdk.job(jobId).then((job: warp_controller.Job) => {
-            warpSdk.condition.resolveCond(job.condition, job.vars).then((isActive: Boolean) => {
+            warpSdk.condition.resolveCond(job.condition, job.vars).then(async (isActive: boolean) => {
                 if (isActive) {
                     console.log('executing now');
                     // sleep half block, setten rpc reports job not found
                     // await new Promise((resolve) => setTimeout(resolve, 10000));
-                    console.log(await executeJob(wallet, warpSdk, jobId.id, mnemonicKey.privateKey));
+                    console.log(await executeJob(jobId, wallet, mnemonicKey, warpSdk));
                     console.log('done executing');
                 } else {
                     console.log('not executable, save to redis');
                     saveJob(job, redisClient);
                 }
-            }).catch(err => {
+            }).catch((err: Error) => {
                 throw err
             })
         }).catch(err => {
             console.log('error getting job, probably due to rpc not updated to latest state', err);
             throw err
         })
+    }
+
+}
+
+export const handleJobExecution = async () => {
+
+}
+
+export const handleJobUpdate = async () => {
+
+}
+
+export const handleJobDeletion = async () => {
+
+}
+
+export const handleJobEviction = async () => {
+
+}
+
+export const processEvent = async (
+    event: TMEvent,
+    redisClient: MyRedisClientType,
+    mnemonicKey: MnemonicKey,
+    wallet: Wallet,
+    warpSdk: WarpSdk
+) => {
+    let jobId = ''
+    let jobAction = ''
+    const attributes = event.attributes
+    for (const attribute of attributes) {
+        if (attribute.key === EVENT_ATTRIBUTE_KEY_JOB_ID) {
+            jobId = attribute.value
+        } else if (attribute.key === EVENT_ATTRIBUTE_KEY_ACTION) {
+            jobAction = attribute.value
+        }
+    }
+    if (jobId === '' || jobAction === '') {
+        throw new Error(`job id not found in tx, please inspect event manually: ${event}`)
+    }
+    console.log(`jobId: ${jobId}, jobAction: ${jobAction}`);
+
+    switch (jobAction) {
+        case EVENT_ATTRIBUTE_VALUE_CREATE_JOB:
+            handleJobCreation(jobId, attributes, redisClient, mnemonicKey, wallet, warpSdk)
+            break;
+        case EVENT_ATTRIBUTE_VALUE_UPDATE_JOB:
+            handleJobUpdate()
+            break;
+        case EVENT_ATTRIBUTE_VALUE_EXECUTE_JOB:
+            handleJobExecution()
+            break;
+        case EVENT_ATTRIBUTE_VALUE_EVICT_JOB:
+            handleJobEviction()
+            break;
+        case EVENT_ATTRIBUTE_VALUE_DELETE_JOB:
+            handleJobDeletion()
+            break;
+        default:
+            throw new Error(`unknown jobAction: ${jobAction}`)
     }
 }
