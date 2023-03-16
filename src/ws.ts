@@ -1,5 +1,5 @@
 import { WarpSdk } from '@terra-money/warp-sdk';
-import { processEvent } from './warp_helper';
+import { processEvent } from './ws_helper';
 import {
   getActionableEvents,
   getLCD,
@@ -7,15 +7,14 @@ import {
   getWallet,
   getWebSocketClient,
   getWebSocketQueryWarpController,
-  initRedisClient,
   initWarpSdk,
-  MyRedisClientType,
 } from './util';
 import {
   MnemonicKey,
   TendermintSubscriptionResponse,
   Wallet,
 } from '@terra-money/terra.js';
+import { initRedisClient, MyRedisClientType } from './redis_helper';
 
 const processWebSocketEvent = (
   tmResponse: TendermintSubscriptionResponse,

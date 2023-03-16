@@ -22,6 +22,9 @@
 - multithreading
 - add more to cache (condition, template, etc)
 - use dev dependency
+- divide jobs into different queue by their type
+    timestamp, blockheight
+    query
 
 ## Profit
 - smart processing, only execute the job when it's profitable

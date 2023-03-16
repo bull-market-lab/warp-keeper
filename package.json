@@ -9,7 +9,7 @@
   "dependencies": {
     "@skip-mev/skipjs": "^1.4.0",
     "@terra-money/terra.js": "^3.1.7",
-    "@terra-money/warp-sdk": "^0.1.16",
+    "@terra-money/warp-sdk": "^0.1.17",
     "husky": "^8.0.3",
     "prettier": "^2.8.4",
     "redis": "^4.6.4",
@@ -22,6 +22,7 @@
     "clean": "tsc --build --clean",
     "build": "yarn clean && tsc",
     "start-redis": "redis-server",
+    "start-redis-cli": "redis-cli",
     "start-ws": "ts-node --esm --experimentalSpecifierResolution node src/ws.ts",
     "start-bot": "ts-node --esm --experimentalSpecifierResolution node src/bot.ts",
     "create-account": "ts-node --esm --experimentalSpecifierResolution node src/tests/scripts/create_account.ts",

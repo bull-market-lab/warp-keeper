@@ -1,4 +1,3 @@
-// import { SkipBundleClient } from '@skip-mev/skipjs';
 import {
   LCDClient,
   MnemonicKey,
@@ -11,7 +10,6 @@ import {
   getNetworkName,
   WarpSdk,
 } from '@terra-money/warp-sdk';
-import { createClient } from 'redis';
 import { TMEvent, TMEventAttribute, TMLog } from 'schema';
 import {
   ACTIONABLE_ACTIONS,
@@ -47,9 +45,9 @@ export const initWarpSdk = (lcd: LCDClient, wallet: Wallet) => {
     CHAIN_ID === CHAIN_ID_LOCALTERRA
       ? WARP_CONTROLLER_ADDRESS!
       : getContractAddress(
-          getNetworkName(lcd.config.chainID),
-          'warp-controller'
-        )!;
+        getNetworkName(lcd.config.chainID),
+        'warp-controller'
+      )!;
   return new WarpSdk(wallet, contractAddress);
 };
 
@@ -60,17 +58,6 @@ export const getCurrentBlockHeight = async () => {
 
 export const getWebSocketClient = () => {
   return new WebSocketClient(WEB_SOCKET_URL);
-};
-
-export type MyRedisClientType = ReturnType<typeof createClient>;
-export const initRedisClient = async (): Promise<MyRedisClientType> => {
-  const redisClient = createClient();
-  redisClient.on('error', (err) => {
-    console.log('Redis Client Error', err);
-    throw err;
-  });
-  await redisClient.connect();
-  return redisClient;
 };
 
 export const getWebSocketQueryWarpController = (

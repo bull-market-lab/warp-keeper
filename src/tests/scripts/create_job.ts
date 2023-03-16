@@ -1,4 +1,5 @@
 import {
+  // @ts-ignore
   getCurrentBlockHeight,
   getLCD,
   getMnemonicKey,
@@ -18,18 +19,6 @@ const condition: warp_controller.Condition = {
   expr: {
     block_height: {
       comparator: '0',
-      op: 'gt',
-    },
-  },
-};
-
-const delayBlock = 2;
-const blockHeightDelay =
-  BigInt(await getCurrentBlockHeight()) + BigInt(delayBlock);
-const conditionDelay: warp_controller.Condition = {
-  expr: {
-    block_height: {
-      comparator: blockHeightDelay.toString(),
       op: 'gt',
     },
   },
@@ -82,16 +71,27 @@ const createJobMsg = {
   msgs: [msg],
 };
 
-// @ts-ignore
-const createJobMsgDelay = {
-  condition: conditionDelay,
-  name: 'test_delay',
-  recurring: false,
-  requeue_on_evict: false,
-  vars: [],
-  reward: '1000000', // 1 LUNA
-  msgs: [msg],
-};
+
+// const delayBlock = 2;
+// const blockHeightDelay =
+//   BigInt(await getCurrentBlockHeight()) + BigInt(delayBlock);
+// const conditionDelay: warp_controller.Condition = {
+//   expr: {
+//     block_height: {
+//       comparator: blockHeightDelay.toString(),
+//       op: 'gt',
+//     },
+//   },
+// };
+// const createJobMsgDelay = {
+//   condition: conditionDelay,
+//   name: 'test_delay',
+//   recurring: false,
+//   requeue_on_evict: false,
+//   vars: [],
+//   reward: '1000000', // 1 LUNA
+//   msgs: [msg],
+// };
 
 warpSdk
   .createJob(owner, createJobMsg)

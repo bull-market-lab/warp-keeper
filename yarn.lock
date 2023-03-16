@@ -218,10 +218,10 @@
     long "^4.0.0"
     protobufjs "~6.11.2"
 
-"@terra-money/warp-sdk@^0.1.16":
-  version "0.1.16"
-  resolved "https://registry.yarnpkg.com/@terra-money/warp-sdk/-/warp-sdk-0.1.16.tgz#3c9bc77aaabe6337789896900ace163fa688ab66"
-  integrity sha512-hlh7kwd/x8z2tWirayTSRB6RXORxSnc0czxYTKRmPcETSBYnCpVrN0IaiVOOQkXfXLB6QC19bq/ReeHMwLad5Q==
+"@terra-money/warp-sdk@^0.1.17":
+  version "0.1.17"
+  resolved "https://registry.yarnpkg.com/@terra-money/warp-sdk/-/warp-sdk-0.1.17.tgz#c52c7bc154cad679ad66be5033aedea68ade81c6"
+  integrity sha512-sOr9oXq4rwZExqFOc1J3J0DTLJl8iP8FrSMQseVRW+qkNf7OCeRNsxlnCYiun5ALdFgfW/N+f+++IBB4FLwEFg==
   dependencies:
     "@terra-money/terra.js" "^3.1.6"
     "@types/jsonpath" "^0.2.0"
@@ -280,9 +280,9 @@
   integrity sha512-QH+37Qds3E0eDlReeboBxfHbX9omAcBCXEzswCu6jySP642jiM3cYSIkU/REqwhCUqXdonHFuBfJDiAJxMNhaQ==
 
 "@types/node@^16.11.56":
-  version "16.18.14"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-16.18.14.tgz#5465ce598486a703caddbefe8603f8a2cffa3461"
-  integrity sha512-wvzClDGQXOCVNU4APPopC2KtMYukaF1MN/W3xAmslx22Z4/IF1/izDMekuyoUlwfnDHYCIZGaj7jMwnJKBTxKw==
+  version "16.18.16"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-16.18.16.tgz#09ff98b144abae2d7cce3e9fe9040ab2bf73222c"
+  integrity sha512-ZOzvDRWp8dCVBmgnkIqYCArgdFOO9YzocZp8Ra25N/RStKiWvMOXHMz+GjSeVNe5TstaTmTWPucGJkDw0XXJWA==
 
 abort-controller@^3.0.0:
   version "3.0.0"

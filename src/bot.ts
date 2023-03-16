@@ -1,11 +1,11 @@
-import { saveAllJobs, findExecutableJobs } from './warp_helper';
+import { saveAllJobs, findExecutableJobs } from './warp_read_helper';
 import {
   getLCD,
   getMnemonicKey,
   getWallet,
-  initRedisClient,
   initWarpSdk,
 } from './util';
+import { initRedisClient } from './redis_helper';
 
 const main = async () => {
   const redisClient = await initRedisClient();
@@ -14,12 +14,11 @@ const main = async () => {
   const wallet = getWallet(lcd, mnemonicKey);
   const warpSdk = initWarpSdk(lcd, wallet);
 
-  // let current_height = (await lcd.tendermint.blockInfo()).block.header.height;
-  // await redisClient.set('initial_height', current_height);
-
   await saveAllJobs(redisClient, warpSdk);
-  await findExecutableJobs(redisClient, wallet, mnemonicKey, warpSdk);
-  await redisClient.disconnect();
+  await findExecutableJobs(redisClient, wallet, mnemonicKey, warpSdk).catch(e => {
+    console.log(`unknown_error_while_trying_to_find_pending_jobs_to_execute:${e}`)
+    redisClient.disconnect();
+  })
 };
 
 main();
