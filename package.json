@@ -28,7 +28,8 @@
     "create-account": "ts-node --esm --experimentalSpecifierResolution node src/tests/scripts/create_account.ts",
     "deposit-account": "ts-node --esm --experimentalSpecifierResolution node src/tests/scripts/deposit_account.ts",
     "withdraw-account": "ts-node --esm --experimentalSpecifierResolution node src/tests/scripts/withdraw_account.ts",
-    "create-job": "ts-node --esm --experimentalSpecifierResolution node src/tests/scripts/create_job.ts"
+    "create-job": "ts-node --esm --experimentalSpecifierResolution node src/tests/scripts/create_job.ts",
+    "execute-job": "ts-node --esm --experimentalSpecifierResolution node src/tests/scripts/execute_job.ts"
   },
   "type": "module"
 }

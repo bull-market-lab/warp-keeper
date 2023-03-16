@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { MnemonicKey, Wallet } from '@terra-money/terra.js';
 import { warp_controller, WarpSdk } from '@terra-money/warp-sdk';
 import { MyRedisClientType, removeExecutedJobFromRedis } from './redis_helper';
@@ -31,6 +32,7 @@ export const saveJob = async (
   job: warp_controller.Job,
   redisClient: MyRedisClientType
 ): Promise<void> => {
+  // TODO: check existence before adding to redis, not a big problem now we use unique data structure anyway
   // limit to 0.001 luna
   // TODO: maybe use bigint in the future
   // but reward is usually low so it shouldn't overflow
@@ -77,8 +79,8 @@ export const saveAllJobs = async (
   while (true) {
     try {
       const jobs: warp_controller.Job[] = await warpSdk.jobs({
-        QUERY_JOB_LIMIT,
-        startAfter,
+        limit: QUERY_JOB_LIMIT,
+        start_after: startAfter,
         job_status: QUERY_JOB_STATUS_PENDING,
       });
 
@@ -94,7 +96,11 @@ export const saveAllJobs = async (
       const lastJobInPage = jobs[jobs.length - 1];
       console.log(`${metricPrefix}.last_job_in_page_${lastJobInPage?.id!}`);
       startAfter = { _0: lastJobInPage?.reward!, _1: lastJobInPage?.id! };
-    } catch (e) {
+    } catch (e: any) {
+      if (axios.isAxiosError(e)) {
+        const msg = JSON.stringify(e.toJSON())
+        throw new Error(`${metricPrefix}.unknown_error.${msg}`);
+      }
       throw new Error(`${metricPrefix}.unknown_error.${e}`);
     }
   }
@@ -109,6 +115,9 @@ export const findExecutableJobs = async (
 ): Promise<void> => {
   let counter = 0;
   while (true) {
+    console.log(
+      `pending jobs count ${await redisClient.sCard(REDIS_PENDING_JOB_ID_SET)}`
+    );
     const allJobIds: string[] = await redisClient.sMembers(
       REDIS_PENDING_JOB_ID_SET
     );
@@ -152,8 +161,5 @@ export const findExecutableJobs = async (
     console.log(`loop ${counter}, sleep 1s`);
     await new Promise((resolve) => setTimeout(resolve, 1000));
     counter++;
-    console.log(
-      `pending jobs count ${await redisClient.sCard(REDIS_PENDING_JOB_ID_SET)}`
-    );
   }
 };

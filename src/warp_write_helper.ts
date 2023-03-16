@@ -30,35 +30,39 @@ export const executeJob = async (
 ): Promise<void> => {
   try {
     // using sdk
-    await warpSdk.executeJob(wallet.key.accAddress, jobId);
-
-    // manually
-    // const msg = executeMsg<
-    //   Extract<
-    //     warp_controller.ExecuteMsg,
-    //     { execute_job: warp_controller.ExecuteJobMsg }
-    //   >
-    // >(wallet.key.accAddress, warpSdk.contractAddress, {
-    //   execute_job: { id: jobId },
+    // NOTE this calls sdk.job under the hood to get the job var, avoid doing that as it takes 1 more api call
+    // await warpSdk.executeJob(wallet.key.accAddress, jobId).catch(e => {
+    //   throw e
     // });
 
-    // const txOptions: CreateTxOptions = {
-    //   msgs: [msg],
-    // };
-    //   const tx = await wallet.createAndSignTx(txOptions);
+    // manually
+    const msg = executeMsg<
+      Extract<
+        warp_controller.ExecuteMsg,
+        { execute_job: warp_controller.ExecuteJobMsg }
+      >
+    >(wallet.key.accAddress, warpSdk.contractAddress, {
+      execute_job: { id: jobId },
+    });
+
+    const txOptions: CreateTxOptions = {
+      msgs: [msg],
+    };
+    const tx = await wallet.createAndSignTx(txOptions);
 
     // without skip
-    //   return await wallet.lcd.tx.broadcast(tx);
+    await wallet.lcd.tx.broadcast(tx);
 
     // with skip
     // const txString = Buffer.from(tx.toBytes()).toString('base64');
     // const DESIRED_HEIGHT_FOR_BUNDLE = 0;
     // const skipBundleClient = new SkipBundleClient('http://pisco-1-api.skip.money');
     // const bundle = await skipBundleClient.signBundle([txString], mnemonicKey.privateKey);
-    // return await skipBundleClient.sendBundle(bundle, DESIRED_HEIGHT_FOR_BUNDLE, true);
+    // await skipBundleClient.sendBundle(bundle, DESIRED_HEIGHT_FOR_BUNDLE, true);
   } catch (e: any) {
     if (axios.isAxiosError(e)) {
-      throw new Error(`${e.response?.data}`);
+      const msg = JSON.stringify(e.toJSON())
+      throw new Error(`${msg}`);
     }
     throw e;
   }

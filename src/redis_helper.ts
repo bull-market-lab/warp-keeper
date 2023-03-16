@@ -24,7 +24,7 @@ export const removeExecutedJobFromRedis = async (
 ): Promise<void> => {
   Promise.all([
     redisClient.sRem(REDIS_PENDING_JOB_ID_SET, jobId),
-    redisClient.hDel(REDIS_PENDING_JOB_ID_SORTED_BY_REWARD_SET, jobId),
+    redisClient.zRem(REDIS_PENDING_JOB_ID_SORTED_BY_REWARD_SET, jobId),
     redisClient.hDel(REDIS_PENDING_JOB_ID_TO_CONDITION_MAP, jobId),
     redisClient.hDel(REDIS_PENDING_JOB_ID_TO_MESSAGES_MAP, jobId),
     redisClient.hDel(REDIS_PENDING_JOB_ID_TO_VARIABLES_MAP, jobId),
