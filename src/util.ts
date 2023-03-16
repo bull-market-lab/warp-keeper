@@ -45,9 +45,9 @@ export const initWarpSdk = (lcd: LCDClient, wallet: Wallet) => {
     CHAIN_ID === CHAIN_ID_LOCALTERRA
       ? WARP_CONTROLLER_ADDRESS!
       : getContractAddress(
-        getNetworkName(lcd.config.chainID),
-        'warp-controller'
-      )!;
+          getNetworkName(lcd.config.chainID),
+          'warp-controller'
+        )!;
   return new WarpSdk(wallet, contractAddress);
 };
 
