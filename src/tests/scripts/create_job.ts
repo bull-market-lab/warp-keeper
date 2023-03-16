@@ -71,7 +71,6 @@ const createJobMsg = {
   msgs: [msg],
 };
 
-
 // const delayBlock = 2;
 // const blockHeightDelay =
 //   BigInt(await getCurrentBlockHeight()) + BigInt(delayBlock);

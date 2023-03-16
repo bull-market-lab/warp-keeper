@@ -1,12 +1,9 @@
 // @ts-ignore
 import { SkipBundleClient } from '@skip-mev/skipjs';
-import {
-  MnemonicKey,
-  Wallet,
-} from '@terra-money/terra.js';
+import { MnemonicKey, Wallet } from '@terra-money/terra.js';
 import { warp_controller, WarpSdk } from '@terra-money/warp-sdk';
 import { getValueByKeyInAttributes } from './util';
-import { TMEvent, TMEventAttribute } from 'schema';
+import { TMEvent, TMEventAttribute } from './schema';
 import {
   EVENT_ATTRIBUTE_KEY_ACTION,
   // @ts-ignore
@@ -17,10 +14,10 @@ import {
   EVENT_ATTRIBUTE_VALUE_EVICT_JOB,
   EVENT_ATTRIBUTE_VALUE_EXECUTE_JOB,
   EVENT_ATTRIBUTE_VALUE_UPDATE_JOB,
-} from 'constant';
-import { saveJob } from 'warp_read_helper';
-import { executeJob } from 'warp_write_helper';
-import { MyRedisClientType } from 'redis_helper';
+} from './constant';
+import { saveJob } from './warp_read_helper';
+import { executeJob } from './warp_write_helper';
+import { MyRedisClientType } from './redis_helper';
 
 export const handleJobCreation = async (
   jobId: string,
@@ -66,9 +63,9 @@ export const handleJobCreation = async (
             throw e;
           });
       })
-      .catch(e => {
+      .catch((e) => {
         console.log(
-          `error getting job, probably due to rpc not updated to latest state: ${e}`,
+          `error getting job, probably due to rpc not updated to latest state: ${e}`
         );
         throw e;
       });

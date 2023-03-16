@@ -15,10 +15,18 @@ const warpAccountAddress = await warpSdk
     throw err;
   });
 
-const amount = 1_000_000
+const amount = 1_000_000;
 
-warpSdk.depositToAccount(wallet.key.accAddress, warpAccountAddress, LUNA, amount.toString()).then(txInfo => {
-  console.log(txInfo)
-}).catch(err => {
-  throw err
-})
+warpSdk
+  .depositToAccount(
+    wallet.key.accAddress,
+    warpAccountAddress,
+    LUNA,
+    amount.toString()
+  )
+  .then((txInfo) => {
+    console.log(txInfo);
+  })
+  .catch((err) => {
+    throw err;
+  });

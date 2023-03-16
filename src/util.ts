@@ -10,7 +10,7 @@ import {
   getNetworkName,
   WarpSdk,
 } from '@terra-money/warp-sdk';
-import { TMEvent, TMEventAttribute, TMLog } from 'schema';
+import { TMEvent, TMEventAttribute, TMLog } from './schema';
 import {
   ACTIONABLE_ACTIONS,
   CHAIN_ID_LOCALTERRA,

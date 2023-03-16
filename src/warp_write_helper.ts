@@ -30,7 +30,7 @@ export const executeJob = async (
 ): Promise<void> => {
   try {
     // using sdk
-    await warpSdk.executeJob(wallet.key.accAddress, jobId)
+    await warpSdk.executeJob(wallet.key.accAddress, jobId);
 
     // manually
     // const msg = executeMsg<
@@ -58,7 +58,7 @@ export const executeJob = async (
     // return await skipBundleClient.sendBundle(bundle, DESIRED_HEIGHT_FOR_BUNDLE, true);
   } catch (e: any) {
     if (axios.isAxiosError(e)) {
-      throw new Error(`${e.response?.data}`)
+      throw new Error(`${e.response?.data}`);
     }
     throw e;
   }

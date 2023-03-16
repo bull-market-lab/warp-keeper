@@ -23,7 +23,7 @@
         "noUnusedParameters": true,
         "checkJs": true,
         "outDir": "dist",
-        "rootDir": "src",
-        "baseUrl": "src"
+        "rootDir": ".",
+        "baseUrl": "."
     }
 }
