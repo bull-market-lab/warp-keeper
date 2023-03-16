@@ -14,4 +14,4 @@ const wallet = getWallet(lcd, mnemonicKey);
 const warpSdk = initWarpSdk(lcd, wallet);
 const owner = wallet.key.accAddress;
 
-warpSdk.executeJob(owner, '16')
+warpSdk.executeJob(owner, '16');

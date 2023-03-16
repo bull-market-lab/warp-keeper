@@ -98,7 +98,7 @@ export const saveAllJobs = async (
       startAfter = { _0: lastJobInPage?.reward!, _1: lastJobInPage?.id! };
     } catch (e: any) {
       if (axios.isAxiosError(e)) {
-        const msg = JSON.stringify(e.toJSON())
+        const msg = JSON.stringify(e.toJSON());
         throw new Error(`${metricPrefix}.unknown_error.${msg}`);
       }
       throw new Error(`${metricPrefix}.unknown_error.${e}`);

@@ -61,7 +61,7 @@ export const executeJob = async (
     // await skipBundleClient.sendBundle(bundle, DESIRED_HEIGHT_FOR_BUNDLE, true);
   } catch (e: any) {
     if (axios.isAxiosError(e)) {
-      const msg = JSON.stringify(e.toJSON())
+      const msg = JSON.stringify(e.toJSON());
       throw new Error(`${msg}`);
     }
     throw e;
