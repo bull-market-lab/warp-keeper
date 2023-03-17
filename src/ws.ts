@@ -1,3 +1,4 @@
+import axios from 'axios'
 import { WarpSdk } from '@terra-money/warp-sdk';
 import { processEvent } from './ws_helper';
 import {
@@ -28,9 +29,14 @@ const processWebSocketEvent = (
   // console.log('tx type type: ' + tmResponse.type);
   const actionableEvents = getActionableEvents(tmResponse);
   actionableEvents.forEach((event) =>
-    processEvent(event, redisClient, mnemonicKey, wallet, warpSdk)
-  );
-};
+    processEvent(event, redisClient, mnemonicKey, wallet, warpSdk).catch((e: any) => {
+      if (axios.isAxiosError(e)) {
+        // @ts-ignore
+        console.log(`Code=${e.response!.data['code']} Message=${e.response!.data['message']}`)
+      }
+      throw e
+    }));
+}
 
 const main = async () => {
   const redisClient = await initRedisClient();

@@ -27,6 +27,7 @@ export const ACTIONABLE_ACTIONS = [
 export const QUERY_JOB_LIMIT = 50;
 export const QUERY_JOB_STATUS_PENDING: warp_controller.JobStatus = 'Pending';
 
+export const REDIS_CURRENT_ACCOUNT_SEQUENCE = 'current_account_sequence';
 export const REDIS_PENDING_JOB_ID_SET = 'pending_job_id_set';
 export const REDIS_PENDING_JOB_ID_SORTED_BY_REWARD_SET =
   'pending_job_id_sorted_by_reward_set';

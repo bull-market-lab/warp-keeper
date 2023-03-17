@@ -1,5 +1,3 @@
-// @ts-ignore
-import { SkipBundleClient } from '@skip-mev/skipjs';
 import { MnemonicKey, Wallet } from '@terra-money/terra.js';
 import { warp_controller, WarpSdk } from '@terra-money/warp-sdk';
 import { getValueByKeyInAttributes } from './util';
@@ -14,6 +12,7 @@ import {
   EVENT_ATTRIBUTE_VALUE_EVICT_JOB,
   EVENT_ATTRIBUTE_VALUE_EXECUTE_JOB,
   EVENT_ATTRIBUTE_VALUE_UPDATE_JOB,
+  REDIS_CURRENT_ACCOUNT_SEQUENCE,
 } from './constant';
 import { saveJob } from './warp_read_helper';
 import { executeJob } from './warp_write_helper';
@@ -37,6 +36,7 @@ export const handleJobCreation = async (
     // var is not logged, i have to get it from chain, so only get condition from log is useless
     // const varStr = getValueByKeyInAttributes(attributes, )
 
+    // we shouldn't need to sleep when running our own full node locally
     // console.log('sleep half block in case rpc has not synced to latest state yet');
     // await new Promise((resolve) => setTimeout(resolve, 1000));
 
@@ -50,42 +50,34 @@ export const handleJobCreation = async (
               console.log('executing now');
               // sleep half block, setten rpc reports job not found
               // await new Promise((resolve) => setTimeout(resolve, 10000));
-              console.log(
-                await executeJob(jobId, wallet, mnemonicKey, warpSdk)
-              );
+              const currentSequence = parseInt((await redisClient.get(REDIS_CURRENT_ACCOUNT_SEQUENCE))!)
+              executeJob(jobId, job.vars, wallet, mnemonicKey, currentSequence, warpSdk)
+              await redisClient.set(REDIS_CURRENT_ACCOUNT_SEQUENCE, currentSequence + 1)
               console.log('done executing');
             } else {
               console.log('not executable, save to redis');
+              // no need to await here
               saveJob(job, redisClient);
             }
-          })
-          .catch((e: Error) => {
-            throw e;
           });
-      })
-      .catch((e) => {
-        console.log(
-          `error getting job, probably due to rpc not updated to latest state: ${e}`
-        );
-        throw e;
       });
   }
 };
 
 export const handleJobExecution = async () => {
-  // TODO
+  // TODO:
 };
 
 export const handleJobUpdate = async () => {
-  // TODO
+  // TODO:
 };
 
 export const handleJobDeletion = async () => {
-  // TODO
+  // TODO:
 };
 
 export const handleJobEviction = async () => {
-  // TODO
+  // TODO:
 };
 
 export const processEvent = async (

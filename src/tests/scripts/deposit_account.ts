@@ -11,9 +11,6 @@ const warpAccountAddress = await warpSdk
   .then((warp_account: warp_controller.Account) => {
     return warp_account.account;
   })
-  .catch((err) => {
-    throw err;
-  });
 
 const amount = 1_000_000;
 
@@ -27,6 +24,3 @@ warpSdk
   .then((txInfo) => {
     console.log(txInfo);
   })
-  .catch((err) => {
-    throw err;
-  });

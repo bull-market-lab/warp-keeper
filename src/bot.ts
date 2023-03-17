@@ -1,6 +1,8 @@
+import axios from 'axios';
 import { saveAllJobs, findExecutableJobs } from './warp_read_helper';
 import { getLCD, getMnemonicKey, getWallet, initWarpSdk } from './util';
 import { initRedisClient } from './redis_helper';
+import { REDIS_CURRENT_ACCOUNT_SEQUENCE } from './constant';
 
 const main = async () => {
   const redisClient = await initRedisClient();
@@ -9,13 +11,16 @@ const main = async () => {
   const wallet = getWallet(lcd, mnemonicKey);
   const warpSdk = initWarpSdk(lcd, wallet);
 
+  await redisClient.set(REDIS_CURRENT_ACCOUNT_SEQUENCE, await wallet.sequence())
   await saveAllJobs(redisClient, warpSdk);
-  await findExecutableJobs(redisClient, wallet, mnemonicKey, warpSdk).catch(
+  findExecutableJobs(redisClient, wallet, mnemonicKey, warpSdk).catch(
     (e) => {
-      console.log(
-        `unknown_error_while_trying_to_find_pending_jobs_to_execute:${e}`
-      );
       redisClient.disconnect();
+      if (axios.isAxiosError(e)) {
+        // @ts-ignore
+        console.log(`Code=${e.response!.data['code']} Message=${e.response!.data['message']}`)
+      }
+      throw e
     }
   );
 };

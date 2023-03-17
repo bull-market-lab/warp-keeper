@@ -10,6 +10,3 @@ warpSdk
   .then((txInfo) => {
     console.log(txInfo);
   })
-  .catch((err) => {
-    console.log(err);
-  });

@@ -98,9 +98,6 @@ warpSdk
     console.log(txInfo);
     console.log('created job');
   })
-  .catch((err) => {
-    throw err;
-  })
   .then((_) => {
     // warpSdk.createJob(owner, createJobMsgDelay).then(txInfo => {
     //     // console.log(txInfo)

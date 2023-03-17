@@ -12,19 +12,23 @@
 - is it possible to put ws into bot
 - more error handling
 - split job queue into multiple queues by job status
+- migrate terra.js to feather.js
 
 ## Monitor
 - integrate grafana metrics
 - setup pager duty to alert when bot / ws down
 - able to detect contract migration (that leads to schema change / breaking api change)
+- better error msg and logging
 
 ## Performance
 - multithreading
+    nodejs worker
 - add more to cache (condition, template, etc)
 - use dev dependency
 - divide jobs into different queue by their type
     timestamp, blockheight
     query
+- look into each function in sdk and calculate number of api call per operation
 
 ## Profit
 - smart processing, only execute the job when it's profitable
