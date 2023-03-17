@@ -8,6 +8,8 @@ const warpSdk = initWarpSdk(lcd, wallet);
 
 const amount = 500_000;
 
-warpSdk.withdrawFromAccount(wallet.key.accAddress, wallet.key.accAddress, LUNA, amount.toString()).then(txInfo => {
-  console.log(txInfo)
-})
+warpSdk
+  .withdrawFromAccount(wallet.key.accAddress, wallet.key.accAddress, LUNA, amount.toString())
+  .then((txInfo) => {
+    console.log(txInfo);
+  });

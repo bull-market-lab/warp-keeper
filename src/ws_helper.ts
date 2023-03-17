@@ -40,27 +40,25 @@ export const handleJobCreation = async (
     // console.log('sleep half block in case rpc has not synced to latest state yet');
     // await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    warpSdk
-      .job(jobId)
-      .then((job: warp_controller.Job) => {
-        warpSdk.condition
-          .resolveCond(job.condition, job.vars)
-          .then(async (isActive: boolean) => {
-            if (isActive) {
-              console.log('executing now');
-              // sleep half block, setten rpc reports job not found
-              // await new Promise((resolve) => setTimeout(resolve, 10000));
-              const currentSequence = parseInt((await redisClient.get(REDIS_CURRENT_ACCOUNT_SEQUENCE))!)
-              executeJob(jobId, job.vars, wallet, mnemonicKey, currentSequence, warpSdk)
-              await redisClient.set(REDIS_CURRENT_ACCOUNT_SEQUENCE, currentSequence + 1)
-              console.log('done executing');
-            } else {
-              console.log('not executable, save to redis');
-              // no need to await here
-              saveJob(job, redisClient);
-            }
-          });
+    warpSdk.job(jobId).then((job: warp_controller.Job) => {
+      warpSdk.condition.resolveCond(job.condition, job.vars).then(async (isActive: boolean) => {
+        if (isActive) {
+          console.log('executing now');
+          // sleep half block, setten rpc reports job not found
+          // await new Promise((resolve) => setTimeout(resolve, 10000));
+          const currentSequence = parseInt(
+            (await redisClient.get(REDIS_CURRENT_ACCOUNT_SEQUENCE))!
+          );
+          executeJob(jobId, job.vars, wallet, mnemonicKey, currentSequence, warpSdk);
+          await redisClient.set(REDIS_CURRENT_ACCOUNT_SEQUENCE, currentSequence + 1);
+          console.log('done executing');
+        } else {
+          console.log('not executable, save to redis');
+          // no need to await here
+          saveJob(job, redisClient);
+        }
       });
+    });
   }
 };
 
@@ -89,22 +87,12 @@ export const processEvent = async (
 ) => {
   const attributes = event.attributes;
   let jobId = getValueByKeyInAttributes(attributes, EVENT_ATTRIBUTE_KEY_JOB_ID);
-  let jobAction = getValueByKeyInAttributes(
-    attributes,
-    EVENT_ATTRIBUTE_KEY_ACTION
-  );
+  let jobAction = getValueByKeyInAttributes(attributes, EVENT_ATTRIBUTE_KEY_ACTION);
   console.log(`jobId: ${jobId}, jobAction: ${jobAction}`);
 
   switch (jobAction) {
     case EVENT_ATTRIBUTE_VALUE_CREATE_JOB:
-      handleJobCreation(
-        jobId,
-        attributes,
-        redisClient,
-        mnemonicKey,
-        wallet,
-        warpSdk
-      );
+      handleJobCreation(jobId, attributes, redisClient, mnemonicKey, wallet, warpSdk);
       break;
     case EVENT_ATTRIBUTE_VALUE_UPDATE_JOB:
       handleJobUpdate();

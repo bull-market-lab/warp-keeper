@@ -1,4 +1,4 @@
-import axios from 'axios'
+import axios from 'axios';
 import { WarpSdk } from '@terra-money/warp-sdk';
 import { processEvent } from './ws_helper';
 import {
@@ -10,11 +10,7 @@ import {
   getWebSocketQueryWarpController,
   initWarpSdk,
 } from './util';
-import {
-  MnemonicKey,
-  TendermintSubscriptionResponse,
-  Wallet,
-} from '@terra-money/terra.js';
+import { MnemonicKey, TendermintSubscriptionResponse, Wallet } from '@terra-money/terra.js';
 import { initRedisClient, MyRedisClientType } from './redis_helper';
 
 const processWebSocketEvent = (
@@ -31,12 +27,15 @@ const processWebSocketEvent = (
   actionableEvents.forEach((event) =>
     processEvent(event, redisClient, mnemonicKey, wallet, warpSdk).catch((e: any) => {
       if (axios.isAxiosError(e)) {
-        // @ts-ignore
-        console.log(`Code=${e.response!.data['code']} Message=${e.response!.data['message']}`)
+        console.log(
+          // @ts-ignore
+          `Code=${e.response!.data['code']} Message=${e.response!.data['message']}`
+        );
       }
-      throw e
-    }));
-}
+      throw e;
+    })
+  );
+};
 
 const main = async () => {
   const redisClient = await initRedisClient();
@@ -45,9 +44,7 @@ const main = async () => {
   const wallet = getWallet(lcd, mnemonicKey);
   const warpSdk = initWarpSdk(lcd, wallet);
   const webSocketClient = getWebSocketClient();
-  const queryWarpController = getWebSocketQueryWarpController(
-    warpSdk.contractAddress
-  );
+  const queryWarpController = getWebSocketQueryWarpController(warpSdk.contractAddress);
   webSocketClient.subscribeTx(queryWarpController, (tmResponse) =>
     processWebSocketEvent(tmResponse, redisClient, mnemonicKey, wallet, warpSdk)
   );

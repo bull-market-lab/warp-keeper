@@ -5,11 +5,7 @@ import {
   Wallet,
   WebSocketClient,
 } from '@terra-money/terra.js';
-import {
-  getContractAddress,
-  getNetworkName,
-  WarpSdk,
-} from '@terra-money/warp-sdk';
+import { getContractAddress, getNetworkName, WarpSdk } from '@terra-money/warp-sdk';
 import { TMEvent, TMEventAttribute, TMLog } from './schema';
 import {
   ACTIONABLE_ACTIONS,
@@ -18,12 +14,7 @@ import {
   EVENT_TYPE_WASM,
   WEB_SOCKET_URL,
 } from './constant';
-import {
-  CHAIN_ID,
-  LCD_ENDPOINT,
-  MNEMONIC_KEY,
-  WARP_CONTROLLER_ADDRESS,
-} from './env';
+import { CHAIN_ID, LCD_ENDPOINT, MNEMONIC_KEY, WARP_CONTROLLER_ADDRESS } from './env';
 
 export const getLCD = () => {
   return new LCDClient({
@@ -44,10 +35,7 @@ export const initWarpSdk = (lcd: LCDClient, wallet: Wallet) => {
   const contractAddress =
     CHAIN_ID === CHAIN_ID_LOCALTERRA
       ? WARP_CONTROLLER_ADDRESS!
-      : getContractAddress(
-          getNetworkName(lcd.config.chainID),
-          'warp-controller'
-        )!;
+      : getContractAddress(getNetworkName(lcd.config.chainID), 'warp-controller')!;
   return new WarpSdk(wallet, contractAddress);
 };
 
@@ -60,18 +48,14 @@ export const getWebSocketClient = () => {
   return new WebSocketClient(WEB_SOCKET_URL);
 };
 
-export const getWebSocketQueryWarpController = (
-  warpControllerAddress: string
-) => {
+export const getWebSocketQueryWarpController = (warpControllerAddress: string) => {
   return {
     'wasm._contract_address': warpControllerAddress,
     // 'wasm.action': 'create_job',
   };
 };
 
-export const getActionableEvents = (
-  tmResponse: TendermintSubscriptionResponse
-) => {
+export const getActionableEvents = (tmResponse: TendermintSubscriptionResponse) => {
   // tmResponse is a list of log, each log has a list of events
   // each event has a type and a list of attributes, each attribute is a kv pair
   // we are looking for event type is wasm, that's the event containing contract defined logs
@@ -80,15 +64,10 @@ export const getActionableEvents = (
   const logs: TMLog[] = JSON.parse(tmResponse.value.TxResult.result.log);
   const actionableEvents: TMEvent[] = [];
   logs.forEach((log) => {
-    const wasmEvents = log.events.filter(
-      (event) => event.type === EVENT_TYPE_WASM
-    );
+    const wasmEvents = log.events.filter((event) => event.type === EVENT_TYPE_WASM);
     wasmEvents.forEach((event) => {
       for (const attribute of event.attributes) {
-        if (
-          attribute.key === EVENT_ATTRIBUTE_KEY_ACTION &&
-          attribute.value in ACTIONABLE_ACTIONS
-        ) {
+        if (attribute.key === EVENT_ATTRIBUTE_KEY_ACTION && attribute.value in ACTIONABLE_ACTIONS) {
           actionableEvents.push(event);
           break;
         }
@@ -98,10 +77,7 @@ export const getActionableEvents = (
   return actionableEvents;
 };
 
-export const getValueByKeyInAttributes = (
-  attributes: TMEventAttribute[],
-  k: string
-) => {
+export const getValueByKeyInAttributes = (attributes: TMEventAttribute[], k: string) => {
   let val = '';
   for (const attribute of attributes) {
     if (attribute.key === k) {

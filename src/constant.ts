@@ -29,15 +29,10 @@ export const QUERY_JOB_STATUS_PENDING: warp_controller.JobStatus = 'Pending';
 
 export const REDIS_CURRENT_ACCOUNT_SEQUENCE = 'current_account_sequence';
 export const REDIS_PENDING_JOB_ID_SET = 'pending_job_id_set';
-export const REDIS_PENDING_JOB_ID_SORTED_BY_REWARD_SET =
-  'pending_job_id_sorted_by_reward_set';
-export const REDIS_PENDING_JOB_ID_TO_CONDITION_MAP =
-  'pending_job_id_to_condition_map';
-export const REDIS_PENDING_JOB_ID_TO_MESSAGES_MAP =
-  'pending_job_id_to_messages_map';
-export const REDIS_PENDING_JOB_ID_TO_VARIABLES_MAP =
-  'pending_job_id_to_variables_map';
+export const REDIS_PENDING_JOB_ID_SORTED_BY_REWARD_SET = 'pending_job_id_sorted_by_reward_set';
+export const REDIS_PENDING_JOB_ID_TO_CONDITION_MAP = 'pending_job_id_to_condition_map';
+export const REDIS_PENDING_JOB_ID_TO_MESSAGES_MAP = 'pending_job_id_to_messages_map';
+export const REDIS_PENDING_JOB_ID_TO_VARIABLES_MAP = 'pending_job_id_to_variables_map';
 
 // we need this set so we won't keep checking these low reward jobs
-export const REDIS_LOW_REWARD_PENDING_JOB_ID_SET =
-  'low_reward_pending_job_id_set';
+export const REDIS_LOW_REWARD_PENDING_JOB_ID_SET = 'low_reward_pending_job_id_set';

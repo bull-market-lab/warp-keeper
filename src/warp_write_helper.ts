@@ -39,12 +39,9 @@ export const executeJob = async (
   const executeJobMsg: warp_controller.ExecuteJobMsg = {
     id: jobId,
     // external_inputs: externalInputs
-  }
+  };
   const msg = executeMsg<
-    Extract<
-      warp_controller.ExecuteMsg,
-      { execute_job: warp_controller.ExecuteJobMsg }
-    >
+    Extract<warp_controller.ExecuteMsg, { execute_job: warp_controller.ExecuteJobMsg }>
   >(wallet.key.accAddress, warpSdk.contractAddress, {
     execute_job: executeJobMsg,
   });
@@ -55,29 +52,26 @@ export const executeJob = async (
     msgs: [msg],
     sequence,
   };
-  const tx = await wallet.createAndSignTx(txOptions)
+  const tx = await wallet.createAndSignTx(txOptions);
   await broadcastTx(wallet, mnemonicKey, tx);
 };
 
 export const batchExecuteJob = async () => {
-  // TODO: 
+  // TODO:
 };
 
-const broadcastTx = async (
-  wallet: Wallet,
-  mnemonicKey: MnemonicKey,
-  tx: Tx): Promise<void> => {
+const broadcastTx = async (wallet: Wallet, mnemonicKey: MnemonicKey, tx: Tx): Promise<void> => {
   if (!ENABLE_SKIP) {
     wallet.lcd.tx.broadcast(tx);
-    return
+    return;
   }
 
   // TODO: test if base64encode works, this cannot be tested in localterra, use polkachu rpc
-  const txString = base64encode(tx)
+  const txString = base64encode(tx);
   // const txString = Buffer.from(tx.toBytes()).toString('base64');
   const DESIRED_HEIGHT_FOR_BUNDLE = 0;
   const skipBundleClient = new SkipBundleClient(SKIP_RPC_ENDPOINT!);
-  skipBundleClient.signBundle([txString], mnemonicKey.privateKey).then(bundle => {
-    skipBundleClient.sendBundle(bundle, DESIRED_HEIGHT_FOR_BUNDLE, true)
+  skipBundleClient.signBundle([txString], mnemonicKey.privateKey).then((bundle) => {
+    skipBundleClient.sendBundle(bundle, DESIRED_HEIGHT_FOR_BUNDLE, true);
   });
-}
+};

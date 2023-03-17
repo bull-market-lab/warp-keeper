@@ -19,8 +19,6 @@
         "noImplicitOverride": true,
         "noImplicitReturns": true,
         "noUncheckedIndexedAccess": true,
-        "noUnusedLocals": true,
-        "noUnusedParameters": true,
         "checkJs": true,
         "outDir": "dist",
         "rootDir": ".",

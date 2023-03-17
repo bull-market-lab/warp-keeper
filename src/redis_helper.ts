@@ -18,10 +18,7 @@ export const initRedisClient = async (): Promise<MyRedisClientType> => {
   return redisClient;
 };
 
-export const removeExecutedJobFromRedis = async (
-  redisClient: MyRedisClientType,
-  jobId: string
-) => {
+export const removeExecutedJobFromRedis = async (redisClient: MyRedisClientType, jobId: string) => {
   await Promise.all([
     redisClient.sRem(REDIS_PENDING_JOB_ID_SET, jobId),
     redisClient.zRem(REDIS_PENDING_JOB_ID_SORTED_BY_REWARD_SET, jobId),

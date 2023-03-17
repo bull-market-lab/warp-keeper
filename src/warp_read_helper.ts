@@ -1,4 +1,4 @@
-import axios from 'axios'
+import axios from 'axios';
 import { MnemonicKey, Wallet } from '@terra-money/terra.js';
 import { warp_controller, WarpSdk } from '@terra-money/warp-sdk';
 import { MyRedisClientType, removeExecutedJobFromRedis } from './redis_helper';
@@ -19,11 +19,9 @@ export const getWarpAccountAddressByOwner = async (
   wallet: Wallet,
   warpSdk: WarpSdk
 ): Promise<string> => {
-  return warpSdk
-    .account(wallet.key.accAddress)
-    .then((warp_account: warp_controller.Account) => {
-      return warp_account.account;
-    })
+  return warpSdk.account(wallet.key.accAddress).then((warp_account: warp_controller.Account) => {
+    return warp_account.account;
+  });
 };
 
 export const saveJob = async (
@@ -50,11 +48,7 @@ export const saveJob = async (
     JSON.stringify(job.condition)
   );
   // msgs should never be empty
-  await redisClient.hSet(
-    REDIS_PENDING_JOB_ID_TO_MESSAGES_MAP,
-    job.id,
-    JSON.stringify(job.msgs)
-  );
+  await redisClient.hSet(REDIS_PENDING_JOB_ID_TO_MESSAGES_MAP, job.id, JSON.stringify(job.msgs));
   // vars could be empty
   if (job.vars && job.vars.length !== 0) {
     await redisClient.hSet(
@@ -103,17 +97,22 @@ export const isJobExecutable = async (
   warpSdk: WarpSdk
 ): Promise<boolean> => {
   // TODO: update this after sdk export resolveCond directly
-  return warpSdk.condition.resolveCond(jobCondition, jobVariables).then((isActive: boolean) => isActive).catch((e: any) => {
-    console.log(
-      `Error processing condition of job ${jobId}, we will execute invalid condition job because we get still reward in this case, error: ${e}`
-    );
-    if (axios.isAxiosError(e)) {
-      // @ts-ignore
-      console.log(`Code=${e.response!.data['code']} Message=${e.response!.data['message']}`)
-    }
-    return true
-  });
-}
+  return warpSdk.condition
+    .resolveCond(jobCondition, jobVariables)
+    .then((isActive: boolean) => isActive)
+    .catch((e: any) => {
+      console.log(
+        `Error processing condition of job ${jobId}, we will execute invalid condition job because we get still reward in this case, error: ${e}`
+      );
+      if (axios.isAxiosError(e)) {
+        console.log(
+          // @ts-ignore
+          `Code=${e.response!.data['code']} Message=${e.response!.data['message']}`
+        );
+      }
+      return true;
+    });
+};
 
 // dead loop check which job becomes executable and execute it
 export const findExecutableJobs = async (
@@ -124,12 +123,8 @@ export const findExecutableJobs = async (
 ): Promise<void> => {
   let counter = 0;
   while (true) {
-    console.log(
-      `pending jobs count ${await redisClient.sCard(REDIS_PENDING_JOB_ID_SET)}`
-    );
-    const allJobIds: string[] = await redisClient.sMembers(
-      REDIS_PENDING_JOB_ID_SET
-    );
+    console.log(`pending jobs count ${await redisClient.sCard(REDIS_PENDING_JOB_ID_SET)}`);
+    const allJobIds: string[] = await redisClient.sMembers(REDIS_PENDING_JOB_ID_SET);
     // const executeJobPromises = []
     // TODO: is it possible to construct a msg to resolve multiple condition in 1 shot?
     // TODO: come up with a better algorithm to find which job to execute when there are multiple executable jobs
@@ -140,27 +135,25 @@ export const findExecutableJobs = async (
         REDIS_PENDING_JOB_ID_TO_CONDITION_MAP,
         jobId
       ))!;
-      const jobCondition: warp_controller.Condition = JSON.parse(
-        jobConditionStr
-      );
+      const jobCondition: warp_controller.Condition = JSON.parse(jobConditionStr);
       const jobVariablesStr: string = (await redisClient.hGet(
         REDIS_PENDING_JOB_ID_TO_VARIABLES_MAP,
         jobId
       ))!;
-      const jobVariables: warp_controller.Variable[] = JSON.parse(jobVariablesStr).map((jobVariable: string) =>
-        JSON.parse(jobVariable)
+      const jobVariables: warp_controller.Variable[] = JSON.parse(jobVariablesStr).map(
+        (jobVariable: string) => JSON.parse(jobVariable)
       );
-      const isActive = await isJobExecutable(jobId, jobCondition, jobVariables, warpSdk)
+      const isActive = await isJobExecutable(jobId, jobCondition, jobVariables, warpSdk);
       if (isActive) {
         console.log(`Find active job ${jobId} from redis, try executing!`);
         // const executeJobPromise = executeJob(jobId, jobVariables, wallet, mnemonicKey, warpSdk).then(
         //   (_) => { removeExecutedJobFromRedis(redisClient, jobId) }
         // );
         // executeJobPromises.push(executeJobPromise)
-        const currentSequence = parseInt((await redisClient.get(REDIS_CURRENT_ACCOUNT_SEQUENCE))!)
-        await executeJob(jobId, jobVariables, wallet, mnemonicKey, currentSequence, warpSdk)
-        await removeExecutedJobFromRedis(redisClient, jobId)
-        await redisClient.set(REDIS_CURRENT_ACCOUNT_SEQUENCE, currentSequence + 1)
+        const currentSequence = parseInt((await redisClient.get(REDIS_CURRENT_ACCOUNT_SEQUENCE))!);
+        await executeJob(jobId, jobVariables, wallet, mnemonicKey, currentSequence, warpSdk);
+        await removeExecutedJobFromRedis(redisClient, jobId);
+        await redisClient.set(REDIS_CURRENT_ACCOUNT_SEQUENCE, currentSequence + 1);
       }
     }
 
