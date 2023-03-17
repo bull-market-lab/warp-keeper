@@ -14,7 +14,13 @@ import {
   EVENT_TYPE_WASM,
   WEB_SOCKET_URL,
 } from './constant';
-import { CHAIN_ID, LCD_ENDPOINT, MNEMONIC_KEY, WARP_CONTROLLER_ADDRESS } from './env';
+import {
+  CHAIN_ID,
+  LCD_ENDPOINT,
+  MNEMONIC_KEY,
+  TESTER_MNEMONIC_KEY,
+  WARP_CONTROLLER_ADDRESS,
+} from './env';
 
 export const getLCD = () => {
   return new LCDClient({
@@ -23,7 +29,10 @@ export const getLCD = () => {
   });
 };
 
-export const getMnemonicKey = () => {
+export const getMnemonicKey = (isTester = false) => {
+  if (isTester) {
+    return new MnemonicKey({ mnemonic: TESTER_MNEMONIC_KEY });
+  }
   return new MnemonicKey({ mnemonic: MNEMONIC_KEY });
 };
 
@@ -67,7 +76,10 @@ export const getActionableEvents = (tmResponse: TendermintSubscriptionResponse) 
     const wasmEvents = log.events.filter((event) => event.type === EVENT_TYPE_WASM);
     wasmEvents.forEach((event) => {
       for (const attribute of event.attributes) {
-        if (attribute.key === EVENT_ATTRIBUTE_KEY_ACTION && attribute.value in ACTIONABLE_ACTIONS) {
+        if (
+          attribute.key === EVENT_ATTRIBUTE_KEY_ACTION &&
+          ACTIONABLE_ACTIONS.includes(attribute.value)
+        ) {
           actionableEvents.push(event);
           break;
         }

@@ -21,7 +21,6 @@ export function executeMsg<T extends {}>(
 
 export const executeJob = async (
   jobId: string,
-  // @ts-ignore
   jobVariables: warp_controller.Variable[],
   wallet: Wallet,
   mnemonicKey: MnemonicKey,

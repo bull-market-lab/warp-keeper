@@ -1,4 +1,7 @@
 # list of TODOs
+## top priority
+1. when to use await
+2. better msg on connection, on error for ws and redis
 
 ## Function
 - test if recurring job and requeue job will work

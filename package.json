@@ -24,7 +24,6 @@
     "start-redis": "redis-server",
     "start-redis-cli": "redis-cli",
     "reset-redis": "rm dump.rdb",
-    "start-ws": "ts-node --esm --experimentalSpecifierResolution node src/ws.ts",
     "start-bot": "ts-node --esm --experimentalSpecifierResolution node src/bot.ts",
     "create-account": "ts-node --esm --experimentalSpecifierResolution node src/tests/scripts/create_account.ts",
     "deposit-account": "ts-node --esm --experimentalSpecifierResolution node src/tests/scripts/deposit_account.ts",

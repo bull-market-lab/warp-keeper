@@ -1,15 +1,8 @@
-import {
-  // @ts-ignore
-  getCurrentBlockHeight,
-  getLCD,
-  getMnemonicKey,
-  getWallet,
-  initWarpSdk,
-} from '../../util';
+import { getCurrentBlockHeight, getLCD, getMnemonicKey, getWallet, initWarpSdk } from '../../util';
 import { warp_controller } from '@terra-money/warp-sdk';
 // import { executeMsg } from '../../warp_helper';
 
-const mnemonicKey = getMnemonicKey();
+const mnemonicKey = getMnemonicKey(true);
 const lcd = getLCD();
 const wallet = getWallet(lcd, mnemonicKey);
 const warpSdk = initWarpSdk(lcd, wallet);
@@ -71,26 +64,25 @@ const createJobMsg = {
   msgs: [msg],
 };
 
-// const delayBlock = 2;
-// const blockHeightDelay =
-//   BigInt(await getCurrentBlockHeight()) + BigInt(delayBlock);
-// const conditionDelay: warp_controller.Condition = {
-//   expr: {
-//     block_height: {
-//       comparator: blockHeightDelay.toString(),
-//       op: 'gt',
-//     },
-//   },
-// };
-// const createJobMsgDelay = {
-//   condition: conditionDelay,
-//   name: 'test_delay',
-//   recurring: false,
-//   requeue_on_evict: false,
-//   vars: [],
-//   reward: '1000000', // 1 LUNA
-//   msgs: [msg],
-// };
+const delayBlock = 2;
+const blockHeightDelay = BigInt(await getCurrentBlockHeight()) + BigInt(delayBlock);
+const conditionDelay: warp_controller.Condition = {
+  expr: {
+    block_height: {
+      comparator: blockHeightDelay.toString(),
+      op: 'gt',
+    },
+  },
+};
+const createJobMsgDelay = {
+  condition: conditionDelay,
+  name: 'test_delay',
+  recurring: false,
+  requeue_on_evict: false,
+  vars: [],
+  reward: '1000000', // 1 LUNA
+  msgs: [msg],
+};
 
 warpSdk
   .createJob(owner, createJobMsg)

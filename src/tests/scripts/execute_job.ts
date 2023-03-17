@@ -1,12 +1,4 @@
-import {
-  // @ts-ignore
-  getCurrentBlockHeight,
-  getLCD,
-  getMnemonicKey,
-  getWallet,
-  initWarpSdk,
-} from '../../util';
-// import { executeMsg } from '../../warp_helper';
+import { getLCD, getMnemonicKey, getWallet, initWarpSdk } from '../../util';
 
 const mnemonicKey = getMnemonicKey();
 const lcd = getLCD();

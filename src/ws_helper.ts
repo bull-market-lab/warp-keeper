@@ -1,10 +1,10 @@
-import { MnemonicKey, Wallet } from '@terra-money/terra.js';
+import axios from 'axios';
+import { MnemonicKey, TendermintSubscriptionResponse, Wallet } from '@terra-money/terra.js';
 import { warp_controller, WarpSdk } from '@terra-money/warp-sdk';
-import { getValueByKeyInAttributes } from './util';
+import { getActionableEvents, getValueByKeyInAttributes } from './util';
 import { TMEvent, TMEventAttribute } from './schema';
 import {
   EVENT_ATTRIBUTE_KEY_ACTION,
-  // @ts-ignore
   EVENT_ATTRIBUTE_KEY_JOB_CONDITION,
   EVENT_ATTRIBUTE_KEY_JOB_ID,
   EVENT_ATTRIBUTE_VALUE_CREATE_JOB,
@@ -20,7 +20,6 @@ import { MyRedisClientType } from './redis_helper';
 
 export const handleJobCreation = async (
   jobId: string,
-  // @ts-ignore
   attributes: TMEventAttribute[],
   redisClient: MyRedisClientType,
   mnemonicKey: MnemonicKey,
@@ -33,32 +32,27 @@ export const handleJobCreation = async (
   } else {
     // const conditionStr = getValueByKeyInAttributes(attributes, EVENT_ATTRIBUTE_KEY_JOB_CONDITION)
     // const condition: warp_controller.Condition = JSON.parse(conditionStr)
-    // var is not logged, i have to get it from chain, so only get condition from log is useless
+    // var is not logged, we have to get it from chain, so only get condition from log is useless
     // const varStr = getValueByKeyInAttributes(attributes, )
 
     // we shouldn't need to sleep when running our own full node locally
     // console.log('sleep half block in case rpc has not synced to latest state yet');
     // await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    warpSdk.job(jobId).then((job: warp_controller.Job) => {
-      warpSdk.condition.resolveCond(job.condition, job.vars).then(async (isActive: boolean) => {
-        if (isActive) {
-          console.log('executing now');
-          // sleep half block, setten rpc reports job not found
-          // await new Promise((resolve) => setTimeout(resolve, 10000));
-          const currentSequence = parseInt(
-            (await redisClient.get(REDIS_CURRENT_ACCOUNT_SEQUENCE))!
-          );
-          executeJob(jobId, job.vars, wallet, mnemonicKey, currentSequence, warpSdk);
-          await redisClient.set(REDIS_CURRENT_ACCOUNT_SEQUENCE, currentSequence + 1);
-          console.log('done executing');
-        } else {
-          console.log('not executable, save to redis');
-          // no need to await here
-          saveJob(job, redisClient);
-        }
-      });
-    });
+    const job: warp_controller.Job = await warpSdk.job(jobId);
+    const isActive: boolean = await warpSdk.condition.resolveCond(job.condition, job.vars);
+    if (isActive) {
+      console.log(`Find active job ${jobId} from WS, try executing!`);
+      // sleep half block, setten rpc reports job not found if call immediately
+      // await new Promise((resolve) => setTimeout(resolve, 10000));
+      const currentSequence = parseInt((await redisClient.get(REDIS_CURRENT_ACCOUNT_SEQUENCE))!);
+      await executeJob(jobId, job.vars, wallet, mnemonicKey, currentSequence, warpSdk);
+      await redisClient.set(REDIS_CURRENT_ACCOUNT_SEQUENCE, currentSequence + 1);
+      console.log(`done executing job ${jobId}`);
+    } else {
+      console.log(`job ${jobId} not executable, save to redis`);
+      saveJob(job, redisClient);
+    }
   }
 };
 
@@ -88,7 +82,7 @@ export const processEvent = async (
   const attributes = event.attributes;
   let jobId = getValueByKeyInAttributes(attributes, EVENT_ATTRIBUTE_KEY_JOB_ID);
   let jobAction = getValueByKeyInAttributes(attributes, EVENT_ATTRIBUTE_KEY_ACTION);
-  console.log(`jobId: ${jobId}, jobAction: ${jobAction}`);
+  console.log(`new event from WS, jobId: ${jobId}, jobAction: ${jobAction}`);
 
   switch (jobAction) {
     case EVENT_ATTRIBUTE_VALUE_CREATE_JOB:
@@ -109,4 +103,28 @@ export const processEvent = async (
     default:
       throw new Error(`unknown jobAction: ${jobAction}`);
   }
+};
+
+export const processWebSocketEvent = (
+  tmResponse: TendermintSubscriptionResponse,
+  redisClient: MyRedisClientType,
+  mnemonicKey: MnemonicKey,
+  wallet: Wallet,
+  warpSdk: WarpSdk
+) => {
+  console.log('new tx on warp_controller contract!');
+  // console.log('tx log: ' + tmResponse.value.TxResult.result.log)
+  // console.log('tx type type: ' + tmResponse.type);
+  const actionableEvents = getActionableEvents(tmResponse);
+  actionableEvents.forEach((event) =>
+    processEvent(event, redisClient, mnemonicKey, wallet, warpSdk).catch((e: any) => {
+      if (axios.isAxiosError(e)) {
+        console.log(
+          // @ts-ignore
+          `Code=${e.response!.data['code']} Message=${e.response!.data['message']}`
+        );
+      }
+      throw e;
+    })
+  );
 };

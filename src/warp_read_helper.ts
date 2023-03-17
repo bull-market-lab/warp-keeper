@@ -154,6 +154,7 @@ export const findExecutableJobs = async (
         await executeJob(jobId, jobVariables, wallet, mnemonicKey, currentSequence, warpSdk);
         await removeExecutedJobFromRedis(redisClient, jobId);
         await redisClient.set(REDIS_CURRENT_ACCOUNT_SEQUENCE, currentSequence + 1);
+        console.log(`done executing job ${jobId}`);
       }
     }
 
