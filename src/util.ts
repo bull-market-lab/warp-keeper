@@ -1,3 +1,4 @@
+import axios from 'axios';
 import {
   LCDClient,
   MnemonicKey,
@@ -5,13 +6,19 @@ import {
   Wallet,
   WebSocketClient,
 } from '@terra-money/terra.js';
-import { getContractAddress, getNetworkName, WarpSdk } from '@terra-money/warp-sdk';
+import {
+  getContractAddress,
+  getNetworkName,
+  WarpSdk,
+  warp_controller,
+} from '@terra-money/warp-sdk';
 import { TMEvent, TMEventAttribute, TMLog } from './schema';
 import {
   ACTIONABLE_ACTIONS,
   CHAIN_ID_LOCALTERRA,
   EVENT_ATTRIBUTE_KEY_ACTION,
   EVENT_TYPE_WASM,
+  VALID_JOB_STATUS,
   WEB_SOCKET_URL,
 } from './constant';
 import {
@@ -29,6 +36,8 @@ export const getLCD = () => {
   });
 };
 
+// tester create job and update job, deposit / withdraw
+// non tester (keeper) execute job, evict job
 export const getMnemonicKey = (isTester = false) => {
   if (isTester) {
     return new MnemonicKey({ mnemonic: TESTER_MNEMONIC_KEY });
@@ -89,7 +98,7 @@ export const getActionableEvents = (tmResponse: TendermintSubscriptionResponse) 
   return actionableEvents;
 };
 
-export const getValueByKeyInAttributes = (attributes: TMEventAttribute[], k: string) => {
+export const getValueByKeyInAttributes = (attributes: TMEventAttribute[], k: string): string => {
   let val = '';
   for (const attribute of attributes) {
     if (attribute.key === k) {
@@ -103,4 +112,54 @@ export const getValueByKeyInAttributes = (attributes: TMEventAttribute[], k: str
     );
   }
   return val;
+};
+
+export const parseJobRewardFromStringToNumber = (reward: string): number => {
+  // TODO: maybe use bigint in the future
+  // but reward is usually low so it shouldn't overflow
+  const result = parseInt(reward);
+  if (isNaN(result)) {
+    throw new Error(`error parsing reward: ${reward} from string to number`);
+  }
+  return result;
+};
+
+export const isRewardTooLow = (reward: number): boolean => {
+  // TODO: set this in env, this should be an estimation on minimum gas
+  // if lower than minimum gas then impossible to be profitable
+  // limit to 0.001 luna
+  return reward / 1000 === 0;
+};
+
+export const parseAccountSequenceFromStringToNumber = (sequence: string): number => {
+  // TODO: maybe use bigint in the future
+  // but sequence is usually low
+  const result = parseInt(sequence);
+  if (isNaN(result)) {
+    throw new Error(`error parsing sequence: ${sequence} from string to number`);
+  }
+  return result;
+};
+
+export const parseJobStatusFromStringToJobStatus = (
+  jobStatusStr: string
+): warp_controller.JobStatus => {
+  const jobStatus = jobStatusStr as warp_controller.JobStatus;
+  if (!VALID_JOB_STATUS.includes(jobStatus)) {
+    throw new Error(`unknown job status: ${jobStatus}`);
+  }
+  return jobStatus;
+};
+
+// if is axios error then print the extracted part otherwise print whole error
+// most of time it should be cause axios error is the one returned when we call lcd
+export const printAxiosError = (e: any) => {
+  if (axios.isAxiosError(e)) {
+    console.log(
+      // @ts-ignore
+      `Code=${e.response!.data['code']} Message=${e.response!.data['message']} \n`
+    );
+  } else {
+    console.log(e);
+  }
 };

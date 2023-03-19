@@ -218,10 +218,10 @@
     long "^4.0.0"
     protobufjs "~6.11.2"
 
-"@terra-money/warp-sdk@^0.1.17":
-  version "0.1.17"
-  resolved "https://registry.yarnpkg.com/@terra-money/warp-sdk/-/warp-sdk-0.1.17.tgz#c52c7bc154cad679ad66be5033aedea68ade81c6"
-  integrity sha512-sOr9oXq4rwZExqFOc1J3J0DTLJl8iP8FrSMQseVRW+qkNf7OCeRNsxlnCYiun5ALdFgfW/N+f+++IBB4FLwEFg==
+"@terra-money/warp-sdk@^0.1.20":
+  version "0.1.20"
+  resolved "https://registry.yarnpkg.com/@terra-money/warp-sdk/-/warp-sdk-0.1.20.tgz#3d4b5a82899e6e4778dbd7068cdf68c0abe31a57"
+  integrity sha512-A9AtJzdjF7TdhfCFVz2tym8hz4TlRFVaHodGDXaLXGoagxNcsSUKf5hDOQm42qQSpEkPEarH/v+/laegVHlyeg==
   dependencies:
     "@terra-money/terra.js" "^3.1.6"
     "@types/jsonpath" "^0.2.0"

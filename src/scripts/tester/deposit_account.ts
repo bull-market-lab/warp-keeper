@@ -1,7 +1,7 @@
 import { warp_controller, LUNA } from '@terra-money/warp-sdk';
-import { getLCD, getMnemonicKey, getWallet, initWarpSdk } from '../../util';
+import { getLCD, getMnemonicKey, getWallet, initWarpSdk, printAxiosError } from '../../util';
 
-const mnemonicKey = getMnemonicKey();
+const mnemonicKey = getMnemonicKey(true);
 const lcd = getLCD();
 const wallet = getWallet(lcd, mnemonicKey);
 const warpSdk = initWarpSdk(lcd, wallet);
@@ -12,10 +12,14 @@ const warpAccountAddress = await warpSdk
     return warp_account.account;
   });
 
-const amount = 1_000_000;
+const amount = (100_000_000).toString();
 
 warpSdk
-  .depositToAccount(wallet.key.accAddress, warpAccountAddress, LUNA, amount.toString())
+  .depositToAccount(wallet.key.accAddress, warpAccountAddress, LUNA, amount)
   .then((txInfo) => {
     console.log(txInfo);
+  })
+  .catch((e) => {
+    printAxiosError(e);
+    throw e;
   });

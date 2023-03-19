@@ -1,11 +1,15 @@
-import axios from 'axios';
 import { MnemonicKey, Wallet } from '@terra-money/terra.js';
 import { warp_controller, WarpSdk } from '@terra-money/warp-sdk';
-import { MyRedisClientType, removeExecutedJobFromRedis } from './redis_helper';
+import {
+  MyRedisClientType,
+  removeJobFromRedis,
+  saveToLowRewardPendingJobSet,
+  saveToPendingJobSet,
+} from './redis_helper';
 import { executeJob } from './warp_write_helper';
 import {
   QUERY_JOB_LIMIT,
-  QUERY_JOB_STATUS_PENDING,
+  JOB_STATUS_PENDING,
   REDIS_CURRENT_ACCOUNT_SEQUENCE,
   REDIS_LOW_REWARD_PENDING_JOB_ID_SET,
   REDIS_PENDING_JOB_ID_SET,
@@ -14,6 +18,12 @@ import {
   REDIS_PENDING_JOB_ID_TO_MESSAGES_MAP,
   REDIS_PENDING_JOB_ID_TO_VARIABLES_MAP,
 } from './constant';
+import {
+  isRewardTooLow,
+  parseAccountSequenceFromStringToNumber,
+  parseJobRewardFromStringToNumber,
+  printAxiosError,
+} from './util';
 
 export const getWarpAccountAddressByOwner = async (
   wallet: Wallet,
@@ -28,37 +38,11 @@ export const saveJob = async (
   job: warp_controller.Job,
   redisClient: MyRedisClientType
 ): Promise<void> => {
-  // TODO: check existence before adding to redis, not a big problem now we use unique data structure anyway
-  // limit to 0.001 luna
-  // TODO: maybe use bigint in the future
-  // but reward is usually low so it shouldn't overflow
-  let reward = parseInt(job.reward.substring(0, job.reward.length - 3));
-  if (reward === 0) {
-    await redisClient.sAdd(REDIS_LOW_REWARD_PENDING_JOB_ID_SET, job.id);
-    return;
-  }
-  await redisClient.sAdd(REDIS_PENDING_JOB_ID_SET, job.id);
-  await redisClient.zAdd(REDIS_PENDING_JOB_ID_SORTED_BY_REWARD_SET, {
-    score: reward,
-    value: job.id,
-  });
-  await redisClient.hSet(
-    REDIS_PENDING_JOB_ID_TO_CONDITION_MAP,
-    job.id,
-    JSON.stringify(job.condition)
-  );
-  // msgs should never be empty
-  await redisClient.hSet(REDIS_PENDING_JOB_ID_TO_MESSAGES_MAP, job.id, JSON.stringify(job.msgs));
-  // vars could be empty
-  if (job.vars && job.vars.length !== 0) {
-    await redisClient.hSet(
-      REDIS_PENDING_JOB_ID_TO_VARIABLES_MAP,
-      job.id,
-      JSON.stringify(job.vars.map((jobVar) => JSON.stringify(jobVar)))
-    );
+  let reward = parseJobRewardFromStringToNumber(job.reward);
+  if (isRewardTooLow(reward)) {
+    await saveToLowRewardPendingJobSet(job, redisClient);
   } else {
-    // need to specify this case manually, i don't know why it error without this
-    await redisClient.hSet(REDIS_PENDING_JOB_ID_TO_VARIABLES_MAP, job.id, '[]');
+    await saveToPendingJobSet(job, redisClient);
   }
 };
 
@@ -72,7 +56,7 @@ export const saveAllJobs = async (
     const jobs: warp_controller.Job[] = await warpSdk.jobs({
       limit: QUERY_JOB_LIMIT,
       start_after: startAfter,
-      job_status: QUERY_JOB_STATUS_PENDING,
+      job_status: JOB_STATUS_PENDING,
     });
 
     if (jobs.length === 0) {
@@ -104,12 +88,7 @@ export const isJobExecutable = async (
       console.log(
         `Error processing condition of job ${jobId}, we will execute invalid condition job because we get still reward in this case, error: ${e}`
       );
-      if (axios.isAxiosError(e)) {
-        console.log(
-          // @ts-ignore
-          `Code=${e.response!.data['code']} Message=${e.response!.data['message']}`
-        );
-      }
+      printAxiosError(e);
       return true;
     });
 };
@@ -147,14 +126,15 @@ export const findExecutableJobs = async (
       if (isActive) {
         console.log(`Find active job ${jobId} from redis, try executing!`);
         // const executeJobPromise = executeJob(jobId, jobVariables, wallet, mnemonicKey, warpSdk).then(
-        //   (_) => { removeExecutedJobFromRedis(redisClient, jobId) }
+        //   (_) => { removeJobFromRedis(redisClient, jobId) }
         // );
         // executeJobPromises.push(executeJobPromise)
-        const currentSequence = parseInt((await redisClient.get(REDIS_CURRENT_ACCOUNT_SEQUENCE))!);
+        const currentSequence = parseAccountSequenceFromStringToNumber(
+          (await redisClient.get(REDIS_CURRENT_ACCOUNT_SEQUENCE))!
+        );
         await executeJob(jobId, jobVariables, wallet, mnemonicKey, currentSequence, warpSdk);
-        await removeExecutedJobFromRedis(redisClient, jobId);
+        await removeJobFromRedis(redisClient, jobId);
         await redisClient.set(REDIS_CURRENT_ACCOUNT_SEQUENCE, currentSequence + 1);
-        console.log(`done executing job ${jobId}`);
       }
     }
 

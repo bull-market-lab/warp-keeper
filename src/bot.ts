@@ -1,4 +1,3 @@
-import axios from 'axios';
 import { saveAllJobs, findExecutableJobs } from './warp_read_helper';
 import {
   getLCD,
@@ -7,6 +6,7 @@ import {
   getWebSocketClient,
   getWebSocketQueryWarpController,
   initWarpSdk,
+  printAxiosError,
 } from './util';
 import { initRedisClient } from './redis_helper';
 import { REDIS_CURRENT_ACCOUNT_SEQUENCE } from './constant';
@@ -14,6 +14,7 @@ import { processWebSocketEvent } from './ws_helper';
 
 const main = async () => {
   const redisClient = await initRedisClient();
+  console.log('redis connected');
   const mnemonicKey = getMnemonicKey();
   const lcd = getLCD();
   const wallet = getWallet(lcd, mnemonicKey);
@@ -28,23 +29,22 @@ const main = async () => {
   });
 
   await redisClient.set(REDIS_CURRENT_ACCOUNT_SEQUENCE, await wallet.sequence());
+  console.log('start saving pending jobs to redis');
   await saveAllJobs(redisClient, warpSdk);
+  console.log('done saving pending jobs to redis');
 
   const queryWarpController = getWebSocketQueryWarpController(warpSdk.contractAddress);
   webSocketClient.subscribeTx(queryWarpController, (tmResponse) =>
     processWebSocketEvent(tmResponse, redisClient, mnemonicKey, wallet, warpSdk)
   );
+  // start ws after saved all pending jobs, this might lose the jobs created during this period
+  // but should avoid some unexpected error i.e. job haven't been saved but triggered ws event
   webSocketClient.start();
-  console.log(
-    'ws and redis both up, start listening to all events relate to warp_controller contract...'
-  );
+  console.log('ws connected, start listening to all events relate to warp_controller contract...');
 
   findExecutableJobs(redisClient, wallet, mnemonicKey, warpSdk).catch((e) => {
     redisClient.disconnect();
-    if (axios.isAxiosError(e)) {
-      // @ts-ignore
-      console.log(`Code=${e.response!.data['code']} Message=${e.response!.data['message']}`);
-    }
+    printAxiosError(e);
     throw e;
   });
 };

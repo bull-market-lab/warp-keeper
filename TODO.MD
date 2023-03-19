@@ -1,7 +1,10 @@
 # list of TODOs
+## current progress
+except triggering eviction, it should work
 ## top priority
 1. when to use await
 2. better msg on connection, on error for ws and redis
+3. eviction bot!
 
 ## Function
 - test if recurring job and requeue job will work
@@ -24,14 +27,19 @@
 - better error msg and logging
 
 ## Performance
-- multithreading
-    nodejs worker
 - add more to cache (condition, template, etc)
 - use dev dependency
 - divide jobs into different queue by their type
     timestamp, blockheight
     query
 - look into each function in sdk and calculate number of api call per operation
-
+- check if redis operation is thread safe
+    i.e. we want to have multiple process (nodejs worker) checking different part of pending jobs and they may call execute job at the same time, will redis block other process when one process is executing job and update redis?
 ## Profit
 - smart processing, only execute the job when it's profitable
+
+## others
+- fix linting, now lint always need 1 more commit
+- check existence before adding to redis, shouldn't be a big deal as we only use set and map
+- styling, function parameters follow same order
+- differentiate read and write sdk for clarity
