@@ -1,6 +1,8 @@
 # list of TODOs
+
 ## current progress
 except triggering eviction, it should work
+
 ## top priority
 1. when to use await
 2. better msg on connection, on error for ws and redis
@@ -30,11 +32,12 @@ except triggering eviction, it should work
 - add more to cache (condition, template, etc)
 - use dev dependency
 - divide jobs into different queue by their type
-    timestamp, blockheight
+    timestamp, block height
     query
 - look into each function in sdk and calculate number of api call per operation
 - check if redis operation is thread safe
     i.e. we want to have multiple process (nodejs worker) checking different part of pending jobs and they may call execute job at the same time, will redis block other process when one process is executing job and update redis?
+
 ## Profit
 - smart processing, only execute the job when it's profitable
 

@@ -9,7 +9,7 @@
   "dependencies": {
     "@skip-mev/skipjs": "^1.4.0",
     "@terra-money/terra.js": "^3.1.7",
-    "@terra-money/warp-sdk": "^0.1.20",
+    "@terra-money/warp-sdk": "^0.1.21",
     "husky": "^8.0.3",
     "prettier": "^2.8.4",
     "redis": "^4.6.4",

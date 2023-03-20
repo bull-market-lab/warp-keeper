@@ -1,4 +1,6 @@
-# warp-keeper
+# (WIP) warp-keeper
+![warp flow chart](warp_flow_chart.jpg)
+
 ## features
 redis for caching
 
