@@ -7,6 +7,8 @@
   "license": "MIT",
   "devDependencies": {},
   "dependencies": {
+    "@sentry/node": "^7.44.2",
+    "@sentry/tracing": "^7.44.2",
     "@skip-mev/skipjs": "^1.4.0",
     "@terra-money/terra.js": "^3.1.7",
     "@terra-money/warp-sdk": "^0.1.21",

@@ -14,3 +14,4 @@ export const SETTEN_PROJECT: string | undefined = env.SETTEN_PROJECT;
 export const SETTEN_KEY: string | undefined = env.SETTEN_KEY;
 export const SKIP_RPC_ENDPOINT: string | undefined = env.SKIP_RPC_ENDPOINT;
 export const ENABLE_SKIP: boolean = env.ENABLE_SKIP === 'true';
+export const SENTRY_DSN: string = env.SENTRY_DSN!;

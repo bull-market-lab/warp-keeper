@@ -25,6 +25,7 @@ except triggering eviction, it should work
 ## Monitor
 - integrate grafana metrics
 - setup pager duty to alert when bot / ws down
+    pager duty doesn't have small business plan, use sentry instead
 - able to detect contract migration (that leads to schema change / breaking api change)
 - better error msg and logging
 
