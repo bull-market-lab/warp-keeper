@@ -1,17 +1,11 @@
 import { MnemonicKey, Wallet } from '@terra-money/terra.js';
 import { warp_controller, WarpSdk } from '@terra-money/warp-sdk';
-import {
-  MyRedisClientType,
-  removeJobFromRedis,
-  saveToLowRewardPendingJobSet,
-  saveToPendingJobSet,
-} from './redis_helper';
+import { MyRedisClientType, removeJobFromRedis, saveToPendingJobSet } from './redis_helper';
 import { executeJob } from './warp_write_helper';
 import {
   QUERY_JOB_LIMIT,
   JOB_STATUS_PENDING,
   REDIS_CURRENT_ACCOUNT_SEQUENCE,
-  REDIS_LOW_REWARD_PENDING_JOB_ID_SET,
   REDIS_PENDING_JOB_ID_SET,
   REDIS_PENDING_JOB_ID_SORTED_BY_REWARD_SET,
   REDIS_PENDING_JOB_ID_TO_CONDITION_MAP,
@@ -19,7 +13,7 @@ import {
   REDIS_PENDING_JOB_ID_TO_VARIABLES_MAP,
 } from './constant';
 import {
-  isRewardTooLow,
+  isRewardSufficient,
   parseAccountSequenceFromStringToNumber,
   parseJobRewardFromStringToNumber,
   printAxiosError,
@@ -39,19 +33,18 @@ export const saveJob = async (
   redisClient: MyRedisClientType
 ): Promise<void> => {
   let reward = parseJobRewardFromStringToNumber(job.reward);
-  if (isRewardTooLow(reward)) {
-    await saveToLowRewardPendingJobSet(job, redisClient);
-  } else {
-    await saveToPendingJobSet(job, redisClient);
+  if (isRewardSufficient(reward)) {
+    saveToPendingJobSet(job, redisClient);
   }
 };
 
-export const saveAllJobs = async (
+export const saveAllPendingJobs = async (
   redisClient: MyRedisClientType,
   warpSdk: WarpSdk
 ): Promise<void> => {
-  const metricPrefix = 'initial_pending_job_search';
+  console.log('start saving pending jobs to redis');
   let startAfter: warp_controller.JobIndex | null = null;
+  const saveJobPromises: Promise<void>[] = [];
   while (true) {
     const jobs: warp_controller.Job[] = await warpSdk.jobs({
       limit: QUERY_JOB_LIMIT,
@@ -60,18 +53,20 @@ export const saveAllJobs = async (
     });
 
     if (jobs.length === 0) {
-      console.log(`${metricPrefix}.exhausted_all_pending_jobs`);
       break;
     }
 
     jobs.forEach((job) => {
-      // TODO: determine if await is needed
-      saveJob(job, redisClient);
+      saveJobPromises.push(saveJob(job, redisClient));
     });
 
     const lastJobInPage = jobs[jobs.length - 1];
     startAfter = { _0: lastJobInPage?.reward!, _1: lastJobInPage?.id! };
   }
+
+  Promise.all(saveJobPromises).then((_) => {
+    console.log('done saving pending jobs to redis');
+  });
 };
 
 export const isJobExecutable = async (
@@ -80,7 +75,6 @@ export const isJobExecutable = async (
   jobVariables: warp_controller.Variable[],
   warpSdk: WarpSdk
 ): Promise<boolean> => {
-  // TODO: update this after sdk export resolveCond directly
   return warpSdk.condition
     .resolveCond(jobCondition, jobVariables)
     .then((isActive: boolean) => isActive)
@@ -104,7 +98,6 @@ export const findExecutableJobs = async (
   while (true) {
     console.log(`pending jobs count ${await redisClient.sCard(REDIS_PENDING_JOB_ID_SET)}`);
     const allJobIds: string[] = await redisClient.sMembers(REDIS_PENDING_JOB_ID_SET);
-    // const executeJobPromises = []
     // TODO: is it possible to construct a msg to resolve multiple condition in 1 shot?
     // TODO: come up with a better algorithm to find which job to execute when there are multiple executable jobs
     // TODO: think about in what order should we scan the pending jobs
@@ -125,10 +118,6 @@ export const findExecutableJobs = async (
       const isActive = await isJobExecutable(jobId, jobCondition, jobVariables, warpSdk);
       if (isActive) {
         console.log(`Find active job ${jobId} from redis, try executing!`);
-        // const executeJobPromise = executeJob(jobId, jobVariables, wallet, mnemonicKey, warpSdk).then(
-        //   (_) => { removeJobFromRedis(redisClient, jobId) }
-        // );
-        // executeJobPromises.push(executeJobPromise)
         const currentSequence = parseAccountSequenceFromStringToNumber(
           (await redisClient.get(REDIS_CURRENT_ACCOUNT_SEQUENCE))!
         );
@@ -137,8 +126,6 @@ export const findExecutableJobs = async (
         await redisClient.set(REDIS_CURRENT_ACCOUNT_SEQUENCE, currentSequence + 1);
       }
     }
-
-    // await Promise.all(executeJobPromises)
 
     console.log(`loop ${counter}, sleep 1s to avoid stack overflow`);
     await new Promise((resolve) => setTimeout(resolve, 1000));

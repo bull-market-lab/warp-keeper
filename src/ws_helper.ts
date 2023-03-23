@@ -1,6 +1,7 @@
 import { MnemonicKey, TendermintSubscriptionResponse, Wallet } from '@terra-money/terra.js';
 import { warp_controller, WarpSdk } from '@terra-money/warp-sdk';
 import {
+  disconnectEverything,
   getActionableEvents,
   getValueByKeyInAttributes,
   parseAccountSequenceFromStringToNumber,
@@ -162,10 +163,11 @@ export const processWebSocketEvent = async (
   // usually actionableEvents should only have 1 event, since 1 tx only has 1 wasm event
   // TODO: check if create multiple jobs in 1 tx
   const actionableEvents = getActionableEvents(tmResponse);
-  actionableEvents.forEach((event) =>
-    processEvent(event, redisClient, mnemonicKey, wallet, warpSdk).catch((e: any) => {
-      printAxiosError(e);
-      throw e;
-    })
+  actionableEvents.forEach(
+    async (event) =>
+      await processEvent(event, redisClient, mnemonicKey, wallet, warpSdk).catch((e: any) => {
+        printAxiosError(e);
+        throw e;
+      })
   );
 };

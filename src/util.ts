@@ -28,6 +28,7 @@ import {
   TESTER_MNEMONIC_KEY,
   WARP_CONTROLLER_ADDRESS,
 } from './env';
+import { MyRedisClientType } from './redis_helper';
 
 export const getLCD = () => {
   return new LCDClient({
@@ -73,7 +74,7 @@ export const getWebSocketQueryWarpController = (warpControllerAddress: string) =
   };
 };
 
-export const getActionableEvents = (tmResponse: TendermintSubscriptionResponse) => {
+export const getActionableEvents = (tmResponse: TendermintSubscriptionResponse): TMEvent[] => {
   // tmResponse is a list of log, each log has a list of events
   // each event has a type and a list of attributes, each attribute is a kv pair
   // we are looking for event type is wasm, that's the event containing contract defined logs
@@ -124,11 +125,11 @@ export const parseJobRewardFromStringToNumber = (reward: string): number => {
   return result;
 };
 
-export const isRewardTooLow = (reward: number): boolean => {
+export const isRewardSufficient = (reward: number): boolean => {
   // TODO: set this in env, this should be an estimation on minimum gas
   // if lower than minimum gas then impossible to be profitable
   // limit to 0.001 luna
-  return reward / 1000 === 0;
+  return reward / 1000 > 0;
 };
 
 export const parseAccountSequenceFromStringToNumber = (sequence: string): number => {
@@ -162,4 +163,12 @@ export const printAxiosError = (e: any) => {
   } else {
     console.log(e);
   }
+};
+
+export const disconnectEverything = async (
+  redisClient: MyRedisClientType,
+  webSocketClient: WebSocketClient
+): Promise<void> => {
+  await redisClient.disconnect();
+  webSocketClient.destroy();
 };
