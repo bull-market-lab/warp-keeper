@@ -5,6 +5,11 @@ except triggering eviction, it should work.
     put eviction bot on hold, warp will fix the bypass eviction I pointed out in next release.
 
 ## next steps
+pack everything into docker container
+    this paves the way for having multiple bot, more similar to mars liquidation bot
+
+determine if we need to block in ws
+    i guess so, if we receive any job update event, we want to reflect that in redis as soon as possible to avoid executing executed / deleted job
 
 ## improvements
 ### function
@@ -27,7 +32,6 @@ except triggering eviction, it should work.
 ### performance
 - add more to cache (condition, template, etc)
     - depends on contract add variables to log
-- use dev dependency
 - divide jobs into different queue by their type
     timestamp, block height
     query

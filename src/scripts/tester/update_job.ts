@@ -15,13 +15,17 @@ const updateMsg: warp_controller.UpdateJobMsg = {
   id: '5',
 };
 
-warpSdk
-  .updateJob(owner, updateMsg)
-  .then((txInfo) => {
-    console.log(txInfo);
-    console.log('updated job with more reward');
-  })
-  .catch((e) => {
-    printAxiosError(e);
-    throw e;
-  });
+const run = async () => {
+  warpSdk
+    .updateJob(owner, updateMsg)
+    .then((txInfo) => {
+      console.log(txInfo);
+      console.log('updated job with more reward');
+    })
+    .catch((e) => {
+      printAxiosError(e);
+      throw e;
+    });
+};
+
+run();

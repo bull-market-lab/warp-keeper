@@ -6,10 +6,14 @@ const wallet = getWallet(lcd, mnemonicKey);
 const warpSdk = initWarpSdk(lcd, wallet);
 const owner = wallet.key.accAddress;
 
-warpSdk
-  .executeJob(owner, '16')
-  .then((txInfo) => console.log(txInfo))
-  .catch((e) => {
-    printAxiosError(e);
-    throw e;
-  });
+const run = async () => {
+  warpSdk
+    .executeJob(owner, '16')
+    .then((txInfo) => console.log(txInfo))
+    .catch((e) => {
+      printAxiosError(e);
+      throw e;
+    });
+};
+
+run();

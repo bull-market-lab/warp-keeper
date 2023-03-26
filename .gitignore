@@ -104,3 +104,6 @@ dist
 
 # redis db
 dump.rdb
+
+# tsc output
+build

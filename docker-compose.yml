@@ -1,0 +1,37 @@
+version: '3'
+
+services:
+  # terrad:
+  #   image: terramoney/localterra-core:2.0.1
+  #   #pull_policy: always
+  #   volumes:
+  #     - ./config:/root/.terra/config
+  #     - ./entrypoint.sh:/entrypoint.sh
+  #   networks:
+  #     - terra
+  #   ports:
+  #     - "26657:26657"
+  #     - "1317:1317"
+  #     - "9090:9090"
+  #     - "9091:9091"
+  #   entrypoint: /entrypoint.sh
+  #   command: terrad start
+  redis:
+    image: redis:latest
+    # networks:
+    #   - terra
+    ports:
+      - '6379:6379'
+  bot:
+    build: .
+    # ports:
+    #   - "3000:3000"
+    # environment:
+    #   - REDIS_HOST=redis
+    #   - REDIS_PORT=6379
+    #   - REDIS_PASSWORD=yourpasswordhere
+    depends_on:
+      - redis
+# networks:
+#   terra:
+#     driver: bridge

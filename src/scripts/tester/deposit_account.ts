@@ -6,20 +6,24 @@ const lcd = getLCD();
 const wallet = getWallet(lcd, mnemonicKey);
 const warpSdk = initWarpSdk(lcd, wallet);
 
-const warpAccountAddress = await warpSdk
-  .account(wallet.key.accAddress)
-  .then((warp_account: warp_controller.Account) => {
-    return warp_account.account;
-  });
+const run = async () => {
+  const warpAccountAddress = await warpSdk
+    .account(wallet.key.accAddress)
+    .then((warp_account: warp_controller.Account) => {
+      return warp_account.account;
+    });
 
-const amount = (100_000_000).toString();
+  const amount = (100_000_000).toString();
 
-warpSdk
-  .depositToAccount(wallet.key.accAddress, warpAccountAddress, LUNA, amount)
-  .then((txInfo) => {
-    console.log(txInfo);
-  })
-  .catch((e) => {
-    printAxiosError(e);
-    throw e;
-  });
+  warpSdk
+    .depositToAccount(wallet.key.accAddress, warpAccountAddress, LUNA, amount)
+    .then((txInfo) => {
+      console.log(txInfo);
+    })
+    .catch((e) => {
+      printAxiosError(e);
+      throw e;
+    });
+};
+
+run();

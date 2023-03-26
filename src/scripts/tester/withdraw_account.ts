@@ -8,12 +8,16 @@ const warpSdk = initWarpSdk(lcd, wallet);
 
 const amount = 2_970_000;
 
-warpSdk
-  .withdrawFromAccount(wallet.key.accAddress, wallet.key.accAddress, LUNA, amount.toString())
-  .then((txInfo) => {
-    console.log(txInfo);
-  })
-  .catch((e) => {
-    printAxiosError(e);
-    throw e;
-  });
+const run = async () => {
+  warpSdk
+    .withdrawFromAccount(wallet.key.accAddress, wallet.key.accAddress, LUNA, amount.toString())
+    .then((txInfo) => {
+      console.log(txInfo);
+    })
+    .catch((e) => {
+      printAxiosError(e);
+      throw e;
+    });
+};
+
+run();
