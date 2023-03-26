@@ -7,9 +7,12 @@ except triggering eviction, it should work.
 ## next steps
 pack everything into docker container
     this paves the way for having multiple bot, more similar to mars liquidation bot
-
+    how to connect to localterra within docker compose warp keeper?
+        nested docker compose?
 determine if we need to block in ws
     i guess so, if we receive any job update event, we want to reflect that in redis as soon as possible to avoid executing executed / deleted job
+
+fix eslint suggestions
 
 ## improvements
 ### function

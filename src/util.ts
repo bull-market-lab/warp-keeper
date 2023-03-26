@@ -28,7 +28,7 @@ import {
   TESTER_MNEMONIC_KEY,
   WARP_CONTROLLER_ADDRESS,
 } from './env';
-import { MyRedisClientType } from './redis_helper';
+import { RedisClientType } from 'redis';
 
 export const getLCD = () => {
   return new LCDClient({
@@ -166,7 +166,7 @@ export const printAxiosError = (e: any) => {
 };
 
 export const disconnectEverything = async (
-  redisClient: MyRedisClientType,
+  redisClient: RedisClientType,
   webSocketClient: WebSocketClient
 ): Promise<void> => {
   await redisClient.disconnect();

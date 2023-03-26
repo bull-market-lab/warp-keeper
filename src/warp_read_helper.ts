@@ -1,6 +1,6 @@
 import { MnemonicKey, Wallet } from '@terra-money/terra.js';
 import { warp_controller, WarpSdk } from '@terra-money/warp-sdk';
-import { MyRedisClientType, removeJobFromRedis, saveToPendingJobSet } from './redis_helper';
+import { removeJobFromRedis, saveToPendingJobSet } from './redis_helper';
 import { executeJob } from './warp_write_helper';
 import {
   QUERY_JOB_LIMIT,
@@ -18,6 +18,7 @@ import {
   parseJobRewardFromStringToNumber,
   printAxiosError,
 } from './util';
+import { RedisClientType } from 'redis';
 
 export const getWarpAccountAddressByOwner = async (
   wallet: Wallet,
@@ -30,7 +31,7 @@ export const getWarpAccountAddressByOwner = async (
 
 export const saveJob = async (
   job: warp_controller.Job,
-  redisClient: MyRedisClientType
+  redisClient: RedisClientType
 ): Promise<void> => {
   let reward = parseJobRewardFromStringToNumber(job.reward);
   if (isRewardSufficient(reward)) {
@@ -39,7 +40,7 @@ export const saveJob = async (
 };
 
 export const saveAllPendingJobs = async (
-  redisClient: MyRedisClientType,
+  redisClient: RedisClientType,
   warpSdk: WarpSdk
 ): Promise<void> => {
   console.log('start saving pending jobs to redis');
@@ -89,7 +90,7 @@ export const isJobExecutable = async (
 
 // dead loop check which job becomes executable and execute it
 export const findExecutableJobs = async (
-  redisClient: MyRedisClientType,
+  redisClient: RedisClientType,
   wallet: Wallet,
   mnemonicKey: MnemonicKey,
   warpSdk: WarpSdk

@@ -1,7 +1,6 @@
 import { MnemonicKey, TendermintSubscriptionResponse, Wallet } from '@terra-money/terra.js';
 import { warp_controller, WarpSdk } from '@terra-money/warp-sdk';
 import {
-  disconnectEverything,
   getActionableEvents,
   getValueByKeyInAttributes,
   parseAccountSequenceFromStringToNumber,
@@ -28,10 +27,11 @@ import {
 } from './constant';
 import { saveJob } from './warp_read_helper';
 import { executeJob } from './warp_write_helper';
-import { MyRedisClientType, removeJobFromRedis, updateJobRewardInRedis } from './redis_helper';
+import { removeJobFromRedis, updateJobRewardInRedis } from './redis_helper';
+import { RedisClientType } from 'redis';
 
 export const handleJobCreation = async (
-  redisClient: MyRedisClientType,
+  redisClient: RedisClientType,
   mnemonicKey: MnemonicKey,
   wallet: Wallet,
   warpSdk: WarpSdk,
@@ -73,14 +73,14 @@ export const handleJobCreation = async (
 };
 
 export const handleJobExecution = async (
-  redisClient: MyRedisClientType,
+  redisClient: RedisClientType,
   jobId: string
 ): Promise<void> => {
   removeJobFromRedis(redisClient, jobId);
 };
 
 export const handleJobDeletion = async (
-  redisClient: MyRedisClientType,
+  redisClient: RedisClientType,
   jobId: string
 ): Promise<void> => {
   removeJobFromRedis(redisClient, jobId);
@@ -88,7 +88,7 @@ export const handleJobDeletion = async (
 
 // update only supports updating the job reward or job name
 export const handleJobUpdate = async (
-  redisClient: MyRedisClientType,
+  redisClient: RedisClientType,
   warpSdk: WarpSdk,
   jobId: string,
   newReward: number
@@ -100,7 +100,7 @@ export const handleJobUpdate = async (
 // requeue set to false means job will expire after 24 hour? as anyone can try to evict a job after 24 hour
 // TODO: test eviction locally
 export const handleJobEviction = async (
-  redisClient: MyRedisClientType,
+  redisClient: RedisClientType,
   jobId: string,
   newStatus: warp_controller.JobStatus
 ): Promise<void> => {
@@ -115,7 +115,7 @@ export const handleJobEviction = async (
 
 export const processEvent = async (
   event: TMEvent,
-  redisClient: MyRedisClientType,
+  redisClient: RedisClientType,
   mnemonicKey: MnemonicKey,
   wallet: Wallet,
   warpSdk: WarpSdk
@@ -152,7 +152,7 @@ export const processEvent = async (
 
 export const processWebSocketEvent = async (
   tmResponse: TendermintSubscriptionResponse,
-  redisClient: MyRedisClientType,
+  redisClient: RedisClientType,
   mnemonicKey: MnemonicKey,
   wallet: Wallet,
   warpSdk: WarpSdk

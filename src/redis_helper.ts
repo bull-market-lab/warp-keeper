@@ -4,14 +4,18 @@ import {
   REDIS_PENDING_JOB_ID_TO_CONDITION_MAP,
   REDIS_PENDING_JOB_ID_TO_MESSAGES_MAP,
   REDIS_PENDING_JOB_ID_TO_VARIABLES_MAP,
+  REDIS_URL,
 } from './constant';
-import { createClient } from 'redis';
+import { createClient, RedisClientType } from 'redis';
+
 import { WarpSdk, warp_controller } from '@terra-money/warp-sdk';
 import { isRewardSufficient, parseJobRewardFromStringToNumber } from './util';
 
-export type MyRedisClientType = ReturnType<typeof createClient>;
-export const initRedisClient = async (): Promise<MyRedisClientType> => {
-  const redisClient = createClient();
+// export type MyRedisClientType = ReturnType<typeof createClient>;
+export const initRedisClient = async (): Promise<RedisClientType> => {
+  const redisClient: RedisClientType = createClient({
+    url: REDIS_URL,
+  });
   redisClient.on('error', (err) => {
     console.log('redis client error', err);
     throw err;
@@ -27,7 +31,7 @@ export const initRedisClient = async (): Promise<MyRedisClientType> => {
 };
 
 export const removeJobFromRedis = async (
-  redisClient: MyRedisClientType,
+  redisClient: RedisClientType,
   jobId: string
 ): Promise<void> => {
   await Promise.all([
@@ -40,7 +44,7 @@ export const removeJobFromRedis = async (
 };
 
 export const updateJobRewardInRedis = async (
-  redisClient: MyRedisClientType,
+  redisClient: RedisClientType,
   warpSdk: WarpSdk,
   jobId: string,
   newAmount: number
@@ -54,7 +58,7 @@ export const updateJobRewardInRedis = async (
 
 export const saveToPendingJobSet = async (
   job: warp_controller.Job,
-  redisClient: MyRedisClientType
+  redisClient: RedisClientType
 ): Promise<void> => {
   let reward = parseJobRewardFromStringToNumber(job.reward);
   await redisClient.sAdd(REDIS_PENDING_JOB_ID_SET, job.id);

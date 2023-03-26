@@ -18,8 +18,8 @@ services:
   #   command: terrad start
   redis:
     image: redis:latest
-    # networks:
-    #   - terra
+    networks:
+      - warp-keeper-network
     ports:
       - '6379:6379'
   bot:
@@ -32,6 +32,9 @@ services:
     #   - REDIS_PASSWORD=yourpasswordhere
     depends_on:
       - redis
-# networks:
-#   terra:
-#     driver: bridge
+    networks:
+      - warp-keeper-network
+
+networks:
+  warp-keeper-network:
+    driver: bridge

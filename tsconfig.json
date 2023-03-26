@@ -23,7 +23,8 @@
     "strictNullChecks": true,
     "suppressImplicitAnyIndexErrors": true,
     "allowSyntheticDefaultImports": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "ignoreDeprecations": "5.0"
   },
   "include": ["**/*.ts", "**/*.tsx", "types.d.ts"],
   "exclude": ["node_modules", "./build/**/*", "jest.config.ts"]

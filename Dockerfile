@@ -8,6 +8,6 @@ COPY . /app
 
 RUN yarn install
 
-RUN yarn tsc
+RUN yarn tsc --project tsconfig.json
 
-CMD node ./dist/src/bot.js
+CMD node ./build/bot.js
