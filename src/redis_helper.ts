@@ -4,17 +4,16 @@ import {
   REDIS_PENDING_JOB_ID_TO_CONDITION_MAP,
   REDIS_PENDING_JOB_ID_TO_MESSAGES_MAP,
   REDIS_PENDING_JOB_ID_TO_VARIABLES_MAP,
-  REDIS_URL,
 } from './constant';
 import { createClient, RedisClientType } from 'redis';
 
 import { WarpSdk, warp_controller } from '@terra-money/warp-sdk';
 import { isRewardSufficient, parseJobRewardFromStringToNumber } from './util';
+import { REDIS_ENDPOINT } from './env';
 
-// export type MyRedisClientType = ReturnType<typeof createClient>;
 export const initRedisClient = async (): Promise<RedisClientType> => {
   const redisClient: RedisClientType = createClient({
-    url: REDIS_URL,
+    url: REDIS_ENDPOINT,
   });
   redisClient.on('error', (err) => {
     console.log('redis client error', err);

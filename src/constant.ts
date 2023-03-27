@@ -1,20 +1,8 @@
 import { warp_controller } from '@terra-money/warp-sdk';
 
 export const CHAIN_ID_LOCALTERRA = 'localterra';
-// for docker
-// docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' container-id
-export const WEB_SOCKET_URL = 'ws://172.18.0.3:26657/websocket';
-// for non docker
-// export const WEB_SOCKET_URL = 'ws://localhost:26657/websocket';
-
-// export const WEB_SOCKET_URL = `wss://rpc.pisco.terra.setten.io/${SETTEN_PROJECT}/websocket?key=${SETTEN_KEY}`
 
 export const EVENT_TYPE_WASM = 'wasm';
-
-// for docker
-export const REDIS_URL = 'redis://redis:6379';
-// for non docker
-// export const REDIS_URL = 'redis://localhost:6379'
 
 export const EVENT_ATTRIBUTE_KEY_ACTION = 'action';
 export const EVENT_ATTRIBUTE_KEY_JOB_ID = 'job_id';

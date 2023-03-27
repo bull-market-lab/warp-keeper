@@ -19,7 +19,6 @@ import {
   EVENT_ATTRIBUTE_KEY_ACTION,
   EVENT_TYPE_WASM,
   VALID_JOB_STATUS,
-  WEB_SOCKET_URL,
 } from './constant';
 import {
   CHAIN_ID,
@@ -27,6 +26,7 @@ import {
   MNEMONIC_KEY,
   TESTER_MNEMONIC_KEY,
   WARP_CONTROLLER_ADDRESS,
+  WEB_SOCKET_ENDPOINT,
 } from './env';
 import { RedisClientType } from 'redis';
 
@@ -64,7 +64,7 @@ export const getCurrentBlockHeight = async () => {
 };
 
 export const getWebSocketClient = () => {
-  return new WebSocketClient(WEB_SOCKET_URL);
+  return new WebSocketClient(WEB_SOCKET_ENDPOINT);
 };
 
 export const getWebSocketQueryWarpController = (warpControllerAddress: string) => {
