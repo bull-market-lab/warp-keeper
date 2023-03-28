@@ -1,5 +1,5 @@
 import { warp_controller } from '@terra-money/warp-sdk';
-import { getLCD, getMnemonicKey, getWallet, initWarpSdk, printAxiosError } from '../../util';
+import { getLCD, getMnemonicKey, getWallet, initWarpSdk, printAxiosError } from '../../libs/util';
 
 const mnemonicKey = getMnemonicKey(true);
 const lcd = getLCD();

@@ -39,8 +39,16 @@ export const VALID_JOB_STATUS: warp_controller.JobStatus[] = [
 ];
 
 export const REDIS_CURRENT_ACCOUNT_SEQUENCE = 'current_account_sequence';
+
 export const REDIS_PENDING_JOB_ID_SET = 'pending_job_id_set';
 export const REDIS_PENDING_JOB_ID_SORTED_BY_REWARD_SET = 'pending_job_id_sorted_by_reward_set';
 export const REDIS_PENDING_JOB_ID_TO_CONDITION_MAP = 'pending_job_id_to_condition_map';
-export const REDIS_PENDING_JOB_ID_TO_MESSAGES_MAP = 'pending_job_id_to_messages_map';
+// msgs are not used, we only need id and condition and vars determine if active
+// export const REDIS_PENDING_JOB_ID_TO_MESSAGES_MAP = 'pending_job_id_to_messages_map';
 export const REDIS_PENDING_JOB_ID_TO_VARIABLES_MAP = 'pending_job_id_to_variables_map';
+
+export const REDIS_EXECUTABLE_JOB_ID_SET = 'executable_job_id_set';
+
+export const REDIS_EVICTABLE_JOB_ID_SET = 'evictable_job_id_set';
+
+export const CHECKER_SLEEP_MILLISECONDS = 100;

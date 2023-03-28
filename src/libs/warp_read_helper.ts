@@ -1,23 +1,17 @@
-import { MnemonicKey, Wallet } from '@terra-money/terra.js';
+import { Wallet } from '@terra-money/terra.js';
 import { warp_controller, WarpSdk } from '@terra-money/warp-sdk';
-import { removeJobFromRedis, saveToPendingJobSet } from './redis_helper';
-import { executeJob } from './warp_write_helper';
+import { saveToPendingJobSet } from './redis_helper';
 import {
   QUERY_JOB_LIMIT,
   JOB_STATUS_PENDING,
-  REDIS_CURRENT_ACCOUNT_SEQUENCE,
   REDIS_PENDING_JOB_ID_SET,
   REDIS_PENDING_JOB_ID_SORTED_BY_REWARD_SET,
   REDIS_PENDING_JOB_ID_TO_CONDITION_MAP,
-  REDIS_PENDING_JOB_ID_TO_MESSAGES_MAP,
   REDIS_PENDING_JOB_ID_TO_VARIABLES_MAP,
+  REDIS_EXECUTABLE_JOB_ID_SET,
+  CHECKER_SLEEP_MILLISECONDS,
 } from './constant';
-import {
-  isRewardSufficient,
-  parseAccountSequenceFromStringToNumber,
-  parseJobRewardFromStringToNumber,
-  printAxiosError,
-} from './util';
+import { isRewardSufficient, parseJobRewardFromStringToNumber, printAxiosError } from './util';
 import { RedisClientType } from 'redis';
 
 export const getWarpAccountAddressByOwner = async (
@@ -66,7 +60,7 @@ export const saveAllPendingJobs = async (
   }
 
   Promise.all(saveJobPromises).then((_) => {
-    console.log('done saving pending jobs to redis');
+    console.log(`done saving ${saveJobPromises.length} pending jobs to redis`);
   });
 };
 
@@ -88,16 +82,19 @@ export const isJobExecutable = async (
     });
 };
 
+// TODO: implement after I add evict job to sdk
+export const isJobEvictable = async (jobId: string, warpSdk: WarpSdk): Promise<boolean> => {
+  return true;
+};
+
 // dead loop check which job becomes executable and execute it
 export const findExecutableJobs = async (
   redisClient: RedisClientType,
-  wallet: Wallet,
-  mnemonicKey: MnemonicKey,
   warpSdk: WarpSdk
 ): Promise<void> => {
   let counter = 0;
   while (true) {
-    console.log(`pending jobs count ${await redisClient.sCard(REDIS_PENDING_JOB_ID_SET)}`);
+    // console.log(`pending jobs count ${await redisClient.sCard(REDIS_PENDING_JOB_ID_SET)}`);
     const allJobIds: string[] = await redisClient.sMembers(REDIS_PENDING_JOB_ID_SET);
     // TODO: is it possible to construct a msg to resolve multiple condition in 1 shot?
     // TODO: come up with a better algorithm to find which job to execute when there are multiple executable jobs
@@ -119,17 +116,13 @@ export const findExecutableJobs = async (
       const isActive = await isJobExecutable(jobId, jobCondition, jobVariables, warpSdk);
       if (isActive) {
         console.log(`Find active job ${jobId} from redis, try executing!`);
-        const currentSequence = parseAccountSequenceFromStringToNumber(
-          (await redisClient.get(REDIS_CURRENT_ACCOUNT_SEQUENCE))!
-        );
-        await executeJob(jobId, jobVariables, wallet, mnemonicKey, currentSequence, warpSdk);
-        await removeJobFromRedis(redisClient, jobId);
-        await redisClient.set(REDIS_CURRENT_ACCOUNT_SEQUENCE, currentSequence + 1);
+        await redisClient.sAdd(REDIS_EXECUTABLE_JOB_ID_SET, jobId);
+        await redisClient.sRem(REDIS_PENDING_JOB_ID_SET, jobId);
       }
     }
 
-    console.log(`loop ${counter}, sleep 1s to avoid stack overflow`);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    // console.log(`loop ${counter}, sleep to avoid stack overflow`);
+    await new Promise((resolve) => setTimeout(resolve, CHECKER_SLEEP_MILLISECONDS));
     counter++;
   }
 };

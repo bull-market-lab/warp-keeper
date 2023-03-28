@@ -6,10 +6,10 @@ import {
   getWallet,
   initWarpSdk,
   printAxiosError,
-} from '../../util';
+} from '../../libs/util';
 import { warp_controller } from '@terra-money/warp-sdk';
 import { CreateTxOptions } from '@terra-money/terra.js';
-import { executeMsg } from '../../warp_write_helper';
+import { executeMsg } from '../../libs/warp_write_helper';
 
 const mnemonicKey = getMnemonicKey(true);
 const lcd = getLCD();

@@ -110,3 +110,6 @@ dump.rdb
 
 # tsc output
 build
+
+# misc
+.DS_Store

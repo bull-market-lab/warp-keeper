@@ -1,4 +1,4 @@
-import { getLCD, getMnemonicKey, getWallet, initWarpSdk, printAxiosError } from '../../util';
+import { getLCD, getMnemonicKey, getWallet, initWarpSdk, printAxiosError } from '../../libs/util';
 
 const mnemonicKey = getMnemonicKey();
 const lcd = getLCD();

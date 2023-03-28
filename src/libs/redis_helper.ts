@@ -1,8 +1,8 @@
 import {
+  REDIS_EXECUTABLE_JOB_ID_SET,
   REDIS_PENDING_JOB_ID_SET,
   REDIS_PENDING_JOB_ID_SORTED_BY_REWARD_SET,
   REDIS_PENDING_JOB_ID_TO_CONDITION_MAP,
-  REDIS_PENDING_JOB_ID_TO_MESSAGES_MAP,
   REDIS_PENDING_JOB_ID_TO_VARIABLES_MAP,
 } from './constant';
 import { createClient, RedisClientType } from 'redis';
@@ -37,8 +37,8 @@ export const removeJobFromRedis = async (
     redisClient.sRem(REDIS_PENDING_JOB_ID_SET, jobId),
     redisClient.zRem(REDIS_PENDING_JOB_ID_SORTED_BY_REWARD_SET, jobId),
     redisClient.hDel(REDIS_PENDING_JOB_ID_TO_CONDITION_MAP, jobId),
-    redisClient.hDel(REDIS_PENDING_JOB_ID_TO_MESSAGES_MAP, jobId),
     redisClient.hDel(REDIS_PENDING_JOB_ID_TO_VARIABLES_MAP, jobId),
+    redisClient.sRem(REDIS_EXECUTABLE_JOB_ID_SET, jobId),
   ]).then((_) => console.log(`removed jobId ${jobId} from redis pending jobs`));
 };
 
@@ -70,8 +70,6 @@ export const saveToPendingJobSet = async (
     job.id,
     JSON.stringify(job.condition)
   );
-  // msgs should never be empty
-  await redisClient.hSet(REDIS_PENDING_JOB_ID_TO_MESSAGES_MAP, job.id, JSON.stringify(job.msgs));
   // vars could be empty
   if (job.vars && job.vars.length !== 0) {
     await redisClient.hSet(

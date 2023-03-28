@@ -10,4 +10,4 @@ RUN yarn install
 
 RUN yarn tsc --project tsconfig.json
 
-CMD node ./build/bot.js
+CMD node ./build/bots/executor.js

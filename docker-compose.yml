@@ -22,18 +22,54 @@ services:
       - warp-keeper-network
     ports:
       - '6379:6379'
-  bot:
-    build: .
-    # ports:
-    #   - "3000:3000"
-    # environment:
-    #   - REDIS_HOST=redis
-    #   - REDIS_PORT=6379
-    #   - REDIS_PASSWORD=yourpasswordhere
+  collector:
+    build:
+      context: ./
+      dockerfile: collector.Dockerfile
+    environment:
+      - REDIS_ENDPOINT=redis://redis:6379
+      - LCD_ENDPOINT=http://host.docker.internal:1317
+      - WEB_SOCKET_ENDPOINT=ws://host.docker.internal:26657/websocket
     depends_on:
       - redis
     networks:
       - warp-keeper-network
+  checker:
+    build:
+      context: ./
+      dockerfile: checker.Dockerfile
+    environment:
+      - REDIS_ENDPOINT=redis://redis:6379
+      - LCD_ENDPOINT=http://host.docker.internal:1317
+      - WEB_SOCKET_ENDPOINT=ws://host.docker.internal:26657/websocket
+    depends_on:
+      - redis
+    networks:
+      - warp-keeper-network
+  executor:
+    build:
+      context: ./
+      dockerfile: executor.Dockerfile
+    environment:
+      - REDIS_ENDPOINT=redis://redis:6379
+      - LCD_ENDPOINT=http://host.docker.internal:1317
+      - WEB_SOCKET_ENDPOINT=ws://host.docker.internal:26657/websocket
+    depends_on:
+      - redis
+    networks:
+      - warp-keeper-network
+  # evictor:
+  #   build:
+  #     context: ./
+  #     dockerfile: evictor.Dockerfile
+  #   environment:
+  #     - REDIS_ENDPOINT=redis://redis:6379
+  #     - LCD_ENDPOINT=http://host.docker.internal:1317
+  #     - WEB_SOCKET_ENDPOINT=ws://host.docker.internal:26657/websocket
+  #   depends_on:
+  #     - redis
+  #   networks:
+  #     - warp-keeper-network
 
 networks:
   warp-keeper-network:
