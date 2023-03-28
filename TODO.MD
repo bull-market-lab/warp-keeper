@@ -1,22 +1,13 @@
 # list of TODOs
 
 ## current progress
-except triggering eviction, it should work.
-    put eviction bot on hold, warp will fix the bypass eviction issue I pointed out in next release.
+MVP should be considered as completed, optimization and corner cases still need to be taken care of.
 
 ## next steps
-break it into multiple job
-    this paves the way for multiple processes for checking pending jobs
-
-determine if we need to block in ws. i.e. handle ws event one after another
-    i guess so, if we receive any job update event, we want to reflect that in redis as soon as possible to avoid executing executed / deleted job
-
-eviction bot
-
-fix eslint suggestions
-
-put terrad into docker compose?
-    not sure if this is a good idea, is it possible to run mainnet full node in docker mode?
+- determine if we need to block in ws. i.e. handle ws event one after another
+    - i guess so, if we receive any job update event, we want to reflect that in redis as soon as possible to avoid executing executed / deleted job
+- eviction bot
+- fix eslint suggestions
 
 ## improvements
 ### function
@@ -44,9 +35,9 @@ put terrad into docker compose?
     query
 - look into each function in sdk and calculate number of api call per operation
 - check if redis operation is thread safe
-    i.e. we want to have multiple process (nodejs worker) checking different part of pending jobs and they may call execute job at the same time, will redis block other process when one process is executing job and update redis?
+    - i.e. we want to have multiple process (nodejs worker) checking different part of pending jobs and they may call execute job at the same time, will redis block other process when one process is executing job and update redis?
 - make build and docker more efficient, now i just copy everything to 4 bots
-    it works but it takes a long time to build
+    - it works but it takes a long time to build
     maybe yarn install outside docker then copy node modules over
 
 ### profit
@@ -57,3 +48,5 @@ put terrad into docker compose?
 - styling, function parameters follow same order
 - differentiate read and write sdk for clarity
 - migrate terra.js to feather.js
+- put terrad into docker compose?
+    - not sure if this is a good idea, is it possible to run mainnet full node in docker mode?

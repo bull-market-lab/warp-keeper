@@ -1,4 +1,5 @@
 import axios from 'axios';
+import * as Sentry from '@sentry/node';
 import {
   LCDClient,
   MnemonicKey,
@@ -24,6 +25,7 @@ import {
   CHAIN_ID,
   LCD_ENDPOINT,
   MNEMONIC_KEY,
+  SENTRY_DSN,
   TESTER_MNEMONIC_KEY,
   WARP_CONTROLLER_ADDRESS,
   WEB_SOCKET_ENDPOINT,
@@ -165,10 +167,21 @@ export const printAxiosError = (e: any) => {
   }
 };
 
-export const disconnectEverything = async (
-  redisClient: RedisClientType,
-  webSocketClient: WebSocketClient
-): Promise<void> => {
+export const disconnectRedis = async (redisClient: RedisClientType): Promise<void> => {
   await redisClient.disconnect();
+};
+
+export const disconnectWebSocket = (webSocketClient: WebSocketClient): void => {
   webSocketClient.destroy();
+};
+
+export const initSentry = (): void => {
+  Sentry.init({
+    dsn: SENTRY_DSN,
+
+    // Set tracesSampleRate to 1.0 to capture 100%
+    // of transactions for performance monitoring.
+    // We recommend adjusting this value in production
+    tracesSampleRate: 1.0,
+  });
 };

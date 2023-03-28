@@ -1,22 +1,23 @@
+import * as Sentry from '@sentry/node';
 import { saveAllPendingJobs } from '../libs/warp_read_helper';
 import {
-  disconnectEverything,
+  disconnectRedis,
+  disconnectWebSocket,
   getLCD,
   getMnemonicKey,
   getWallet,
   getWebSocketClient,
   getWebSocketQueryWarpController,
+  initSentry,
   initWarpSdk,
   printAxiosError,
 } from '../libs/util';
 import { initRedisClient } from '../libs/redis_helper';
 import { processWebSocketEvent } from '../libs/ws_helper';
 
-import * as Sentry from '@sentry/node';
-import * as Tracing from '@sentry/tracing';
-import { SENTRY_DSN } from '../libs/env';
-
 const main = async () => {
+  initSentry();
+
   const redisClient = await initRedisClient();
   const mnemonicKey = getMnemonicKey();
   const lcd = getLCD();
@@ -24,18 +25,10 @@ const main = async () => {
   const warpSdk = initWarpSdk(lcd, wallet);
   const webSocketClient = getWebSocketClient();
 
-  Sentry.init({
-    dsn: SENTRY_DSN,
-
-    // Set tracesSampleRate to 1.0 to capture 100%
-    // of transactions for performance monitoring.
-    // We recommend adjusting this value in production
-    tracesSampleRate: 1.0,
-  });
-
   process.on('SIGINT', async () => {
     console.log('caught interrupt signal');
-    await disconnectEverything(redisClient, webSocketClient);
+    await disconnectRedis(redisClient);
+    disconnectWebSocket(webSocketClient);
 
     // const transaction = Sentry.startTransaction({
     //   op: "test",
@@ -48,7 +41,8 @@ const main = async () => {
   });
 
   await saveAllPendingJobs(redisClient, warpSdk).catch(async (e) => {
-    await disconnectEverything(redisClient, webSocketClient);
+    await disconnectRedis(redisClient);
+    disconnectWebSocket(webSocketClient);
     printAxiosError(e);
     throw e;
   });
