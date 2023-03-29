@@ -34,10 +34,10 @@ services:
       - redis
     networks:
       - warp-keeper-network
-  checker:
+  monitor:
     build:
       context: ./
-      dockerfile: checker.Dockerfile
+      dockerfile: monitor.Dockerfile
     environment:
       - REDIS_ENDPOINT=redis://redis:6379
       - LCD_ENDPOINT=http://host.docker.internal:1317
@@ -58,18 +58,6 @@ services:
       - redis
     networks:
       - warp-keeper-network
-  # evictor:
-  #   build:
-  #     context: ./
-  #     dockerfile: evictor.Dockerfile
-  #   environment:
-  #     - REDIS_ENDPOINT=redis://redis:6379
-  #     - LCD_ENDPOINT=http://host.docker.internal:1317
-  #     - WEB_SOCKET_ENDPOINT=ws://host.docker.internal:26657/websocket
-  #   depends_on:
-  #     - redis
-  #   networks:
-  #     - warp-keeper-network
 
 networks:
   warp-keeper-network:

@@ -39,8 +39,17 @@ const run = async () => {
     },
   };
 
+  const conditionAlwaysFalse: warp_controller.Condition = {
+    expr: {
+      block_height: {
+        comparator: '0',
+        op: 'lt',
+      },
+    },
+  };
+
   const createJobMsg: warp_controller.CreateJobMsg = {
-    condition: condition,
+    condition: conditionAlwaysFalse,
     name: 'test',
     recurring: false,
     requeue_on_evict: false,

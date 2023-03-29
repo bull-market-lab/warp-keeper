@@ -8,6 +8,7 @@ MVP should be considered as completed, optimization and corner cases still need 
     - i guess so, if we receive any job update event, we want to reflect that in redis as soon as possible to avoid executing executed / deleted job
 - eviction bot
 - fix eslint suggestions
+- finish all TODOs in code
 
 ## improvements
 ### function

@@ -1,5 +1,5 @@
 import * as Sentry from '@sentry/node';
-import { executeExecutableJobs } from '../libs/warp_write_helper';
+import { executeAndEvictJob } from '../libs/warp_write_helper';
 import {
   disconnectRedis,
   getLCD,
@@ -39,7 +39,7 @@ const main = async () => {
   // so we can send multiple tx in short period of time
   await redisClient.set(REDIS_CURRENT_ACCOUNT_SEQUENCE, await wallet.sequence());
 
-  executeExecutableJobs(redisClient, wallet, mnemonicKey, warpSdk).catch(async (e) => {
+  executeAndEvictJob(redisClient, wallet, mnemonicKey, warpSdk).catch(async (e) => {
     await disconnectRedis(redisClient);
     printAxiosError(e);
     throw e;

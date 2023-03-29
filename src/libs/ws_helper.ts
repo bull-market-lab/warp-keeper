@@ -3,7 +3,6 @@ import { warp_controller, WarpSdk } from '@terra-money/warp-sdk';
 import {
   getActionableEvents,
   getValueByKeyInAttributes,
-  parseAccountSequenceFromStringToNumber,
   parseJobRewardFromStringToNumber,
   parseJobStatusFromStringToJobStatus,
   printAxiosError,
@@ -11,8 +10,8 @@ import {
 import { TMEvent, TMEventAttribute } from './schema';
 import {
   EVENT_ATTRIBUTE_KEY_ACTION,
-  EVENT_ATTRIBUTE_KEY_JOB_CONDITION,
   EVENT_ATTRIBUTE_KEY_JOB_ID,
+  EVENT_ATTRIBUTE_KEY_JOB_LAST_UPDATED_TIME,
   EVENT_ATTRIBUTE_KEY_JOB_REWARD,
   EVENT_ATTRIBUTE_KEY_JOB_STATUS,
   EVENT_ATTRIBUTE_VALUE_CREATE_JOB,
@@ -21,13 +20,14 @@ import {
   EVENT_ATTRIBUTE_VALUE_EXECUTE_JOB,
   EVENT_ATTRIBUTE_VALUE_UPDATE_JOB,
   JOB_STATUS_EVICTED,
-  REDIS_CURRENT_ACCOUNT_SEQUENCE,
-  REDIS_PENDING_JOB_ID_SET,
-  VALID_JOB_STATUS,
 } from './constant';
 import { saveJob } from './warp_read_helper';
-import { executeJob } from './warp_write_helper';
-import { removeJobFromRedis, updateJobRewardInRedis } from './redis_helper';
+import {
+  removeJobFromRedis,
+  updateJobLastUpdateTimeInRedis,
+  updateJobRewardInRedis,
+  saveToPendingJobSet,
+} from './redis_helper';
 import { RedisClientType } from 'redis';
 
 export const handleJobCreation = async (
@@ -54,7 +54,7 @@ export const handleJobCreation = async (
     // await new Promise((resolve) => setTimeout(resolve, 1000));
 
     const job: warp_controller.Job = await warpSdk.job(jobId);
-    saveJob(job, redisClient);
+    await saveJob(job, redisClient);
 
     // do not try to execute job even if active
     // all execute job operation should be blocking, i can't get this ws callback work in blocking way
@@ -76,14 +76,14 @@ export const handleJobExecution = async (
   redisClient: RedisClientType,
   jobId: string
 ): Promise<void> => {
-  removeJobFromRedis(redisClient, jobId);
+  await removeJobFromRedis(redisClient, jobId);
 };
 
 export const handleJobDeletion = async (
   redisClient: RedisClientType,
   jobId: string
 ): Promise<void> => {
-  removeJobFromRedis(redisClient, jobId);
+  await removeJobFromRedis(redisClient, jobId);
 };
 
 // update only supports updating the job reward or job name
@@ -91,9 +91,11 @@ export const handleJobUpdate = async (
   redisClient: RedisClientType,
   warpSdk: WarpSdk,
   jobId: string,
-  newReward: number
+  newReward: number,
+  updatedJobLastUpdateTimeStr: string
 ): Promise<void> => {
-  updateJobRewardInRedis(redisClient, warpSdk, jobId, newReward);
+  await updateJobRewardInRedis(redisClient, warpSdk, jobId, newReward);
+  await updateJobLastUpdateTimeInRedis(redisClient, jobId, updatedJobLastUpdateTimeStr);
 };
 
 // evict will leave job in evicted status (if no state rent cannot be paid or requeue set to false)
@@ -101,16 +103,24 @@ export const handleJobUpdate = async (
 // TODO: test eviction locally
 export const handleJobEviction = async (
   redisClient: RedisClientType,
+  warpSdk: WarpSdk,
   jobId: string,
   newStatus: warp_controller.JobStatus
 ): Promise<void> => {
   // theoretically status is either pending (enqueue is true and enough money to pay rent) or evicted
   // no need to update if job is pending, it should have been added to pending set earlier
-  if (newStatus !== JOB_STATUS_EVICTED) {
-    return;
+  const updatedJobLastUpdateTimeStr = (await warpSdk.job(jobId)).last_update_time;
+  await updateJobLastUpdateTimeInRedis(redisClient, jobId, updatedJobLastUpdateTimeStr);
+  if (newStatus === JOB_STATUS_EVICTED) {
+    // evicted means we should remove it
+    await removeJobFromRedis(redisClient, jobId);
+    console.log('job new status is evicted, delete it from redis');
+  } else {
+    // add job back to redis
+    const job: warp_controller.Job = await warpSdk.job(jobId);
+    await saveToPendingJobSet(job, redisClient);
+    console.log('add job back to pending set');
   }
-  // evicted means we should remove it
-  await removeJobFromRedis(redisClient, jobId);
 };
 
 export const processEvent = async (
@@ -124,6 +134,11 @@ export const processEvent = async (
   let jobId = getValueByKeyInAttributes(attributes, EVENT_ATTRIBUTE_KEY_JOB_ID);
   let jobAction = getValueByKeyInAttributes(attributes, EVENT_ATTRIBUTE_KEY_ACTION);
   console.log(`new event from WS, jobId: ${jobId}, jobAction: ${jobAction}`);
+  let newRewardStr: string;
+  let newReward: number;
+  let newStatusStr: string;
+  let newStatus: warp_controller.JobStatus;
+  let updatedJobLastUpdateTimeStr: string;
 
   switch (jobAction) {
     case EVENT_ATTRIBUTE_VALUE_CREATE_JOB:
@@ -136,14 +151,20 @@ export const processEvent = async (
       handleJobDeletion(redisClient, jobId);
       break;
     case EVENT_ATTRIBUTE_VALUE_UPDATE_JOB:
-      const newRewardStr = getValueByKeyInAttributes(attributes, EVENT_ATTRIBUTE_KEY_JOB_REWARD);
-      const newReward = parseJobRewardFromStringToNumber(newRewardStr);
-      handleJobUpdate(redisClient, warpSdk, jobId, newReward);
+      newRewardStr = getValueByKeyInAttributes(attributes, EVENT_ATTRIBUTE_KEY_JOB_REWARD);
+      newReward = parseJobRewardFromStringToNumber(newRewardStr);
+      updatedJobLastUpdateTimeStr = getValueByKeyInAttributes(
+        attributes,
+        EVENT_ATTRIBUTE_KEY_JOB_LAST_UPDATED_TIME
+      );
+      handleJobUpdate(redisClient, warpSdk, jobId, newReward, updatedJobLastUpdateTimeStr);
       break;
     case EVENT_ATTRIBUTE_VALUE_EVICT_JOB:
-      const newStatusStr = getValueByKeyInAttributes(attributes, EVENT_ATTRIBUTE_KEY_JOB_STATUS);
-      const newStatus = parseJobStatusFromStringToJobStatus(newStatusStr);
-      handleJobEviction(redisClient, jobId, newStatus);
+      newStatusStr = getValueByKeyInAttributes(attributes, EVENT_ATTRIBUTE_KEY_JOB_STATUS);
+      newStatus = parseJobStatusFromStringToJobStatus(newStatusStr);
+      // evict_job doesn't log last_update_time so we have to query job to get it
+      // updatedJobLastUpdateTimeStr = getValueByKeyInAttributes(attributes, EVENT_ATTRIBUTE_KEY_JOB_LAST_UPDATED_TIME);
+      handleJobEviction(redisClient, warpSdk, jobId, newStatus);
       break;
     default:
       throw new Error(`unknown jobAction: ${jobAction}`);

@@ -1,5 +1,5 @@
 import * as Sentry from '@sentry/node';
-import { findExecutableJobs } from '../libs/warp_read_helper';
+import { findExecutableJobsAndEvictableJobs } from '../libs/warp_read_helper';
 import {
   disconnectRedis,
   getLCD,
@@ -9,7 +9,7 @@ import {
   initWarpSdk,
   printAxiosError,
 } from '../libs/util';
-import { initRedisClient } from '../libs/redis_helper';
+import { initRedisClient, setEvictionTimeInRedis } from '../libs/redis_helper';
 
 const main = async () => {
   initSentry();
@@ -33,7 +33,9 @@ const main = async () => {
     process.exit(0);
   });
 
-  findExecutableJobs(redisClient, warpSdk).catch(async (e) => {
+  await setEvictionTimeInRedis(redisClient, warpSdk);
+
+  findExecutableJobsAndEvictableJobs(redisClient, warpSdk).catch(async (e) => {
     await disconnectRedis(redisClient);
     printAxiosError(e);
     throw e;

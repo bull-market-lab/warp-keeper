@@ -10,4 +10,4 @@ RUN yarn install
 
 RUN yarn tsc --project tsconfig.json
 
-CMD node ./build/bots/checker.js
+CMD node ./build/bots/monitor.js

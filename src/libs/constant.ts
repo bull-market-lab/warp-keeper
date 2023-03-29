@@ -9,6 +9,7 @@ export const EVENT_ATTRIBUTE_KEY_JOB_ID = 'job_id';
 export const EVENT_ATTRIBUTE_KEY_JOB_CONDITION = 'job_condition';
 export const EVENT_ATTRIBUTE_KEY_JOB_REWARD = 'job_reward';
 export const EVENT_ATTRIBUTE_KEY_JOB_STATUS = 'job_status';
+export const EVENT_ATTRIBUTE_KEY_JOB_LAST_UPDATED_TIME = 'job_last_updated_time';
 
 export const EVENT_ATTRIBUTE_VALUE_CREATE_JOB = 'create_job';
 export const EVENT_ATTRIBUTE_VALUE_UPDATE_JOB = 'update_job';
@@ -46,9 +47,19 @@ export const REDIS_PENDING_JOB_ID_TO_CONDITION_MAP = 'pending_job_id_to_conditio
 // msgs are not used, we only need id and condition and vars determine if active
 // export const REDIS_PENDING_JOB_ID_TO_MESSAGES_MAP = 'pending_job_id_to_messages_map';
 export const REDIS_PENDING_JOB_ID_TO_VARIABLES_MAP = 'pending_job_id_to_variables_map';
+export const REDIS_PENDING_JOB_ID_TO_LAST_UPDATE_TIME_MAP =
+  'pending_job_id_to_last_update_time_map';
 
 export const REDIS_EXECUTABLE_JOB_ID_SET = 'executable_job_id_set';
 
 export const REDIS_EVICTABLE_JOB_ID_SET = 'evictable_job_id_set';
 
-export const CHECKER_SLEEP_MILLISECONDS = 100;
+// this is set in controller contract's config during initialization
+// currently it's 1 day or 86400 seconds
+// if current time - job's last update time > eviction time then job can be evicted
+// eviction event handler will determine if we want to remove the job based on updated job status
+// all time are in UTC timezone
+export const REDIS_EVICTION_TIME = 'eviction_time_in_second';
+
+export const MONITOR_SLEEP_MILLISECONDS = 100;
+export const EXECUTOR_SLEEP_MILLISECONDS = 100;

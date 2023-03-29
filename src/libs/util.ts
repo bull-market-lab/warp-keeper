@@ -130,8 +130,9 @@ export const parseJobRewardFromStringToNumber = (reward: string): number => {
 export const isRewardSufficient = (reward: number): boolean => {
   // TODO: set this in env, this should be an estimation on minimum gas
   // if lower than minimum gas then impossible to be profitable
-  // limit to 0.001 luna
-  return reward / 1000 > 0;
+  // limit to at least 0.01 luna
+  // this is probably always true, as controller now force min reward to be 0.01
+  return reward / 100 > 0;
 };
 
 export const parseAccountSequenceFromStringToNumber = (sequence: string): number => {
@@ -144,10 +145,20 @@ export const parseAccountSequenceFromStringToNumber = (sequence: string): number
   return result;
 };
 
+export const parseJobLastUpdateTimeFromStringToNumber = (lastUpdateTime: string): number => {
+  // TODO: maybe use bigint in the future
+  // but last_update_time is unix timestamp in seconds so it's not super big
+  const result = parseInt(lastUpdateTime);
+  if (isNaN(result)) {
+    throw new Error(`error parsing lastUpdateTime: ${lastUpdateTime} from string to number`);
+  }
+  return result;
+};
+
 export const parseJobStatusFromStringToJobStatus = (
   jobStatusStr: string
 ): warp_controller.JobStatus => {
-  const jobStatus = jobStatusStr as warp_controller.JobStatus;
+  const jobStatus = jobStatusStr.substring(1, jobStatusStr.length - 1) as warp_controller.JobStatus;
   if (!VALID_JOB_STATUS.includes(jobStatus)) {
     throw new Error(`unknown job status: ${jobStatus}`);
   }
