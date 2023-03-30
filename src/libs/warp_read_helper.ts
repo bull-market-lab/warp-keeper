@@ -17,9 +17,10 @@ import {
 } from './constant';
 import {
   isRewardSufficient,
-  parseJobLastUpdateTimeFromStringToNumber,
+  parseTimeFromStringToNumber,
   parseJobRewardFromStringToNumber,
   printAxiosError,
+  getCurrentBlockTimeInUnixTimestampInSeconds,
 } from './util';
 import { RedisClientType } from 'redis';
 
@@ -84,7 +85,7 @@ export const isJobExecutable = async (
     .then((isActive: boolean) => isActive)
     .catch((e: any) => {
       console.log(
-        `Error processing condition of job ${jobId}, we will execute invalid condition job because we get still reward in this case, error: ${e}`
+        `jobId ${jobId} has error processing condition, we will execute invalid condition job because we get still reward in this case, error: ${e}`
       );
       printAxiosError(e);
       return true;
@@ -93,13 +94,15 @@ export const isJobExecutable = async (
 
 export const isJobEvictable = async (
   redisClient: RedisClientType,
+  warpSdk: WarpSdk,
   lastUpdateTimeStr: string
 ): Promise<boolean> => {
-  const currentTimeInSeconds: number = Math.floor(Date.now() / 1000);
-  const lastUpdateTime = parseJobLastUpdateTimeFromStringToNumber(lastUpdateTimeStr);
+  const currentTimeInSeconds = await getCurrentBlockTimeInUnixTimestampInSeconds(
+    warpSdk.wallet.lcd
+  );
+  const lastUpdateTime = parseTimeFromStringToNumber(lastUpdateTimeStr);
   const evictionTimeStr = await redisClient.get(REDIS_EVICTION_TIME);
-  const evictionTime = parseJobLastUpdateTimeFromStringToNumber(evictionTimeStr!);
-  // TODO: delay 1 block because i see not found sometimes, double check if delay is necessary
+  const evictionTime = parseTimeFromStringToNumber(evictionTimeStr!);
   return currentTimeInSeconds - lastUpdateTime > evictionTime + 6;
 };
 
@@ -123,21 +126,21 @@ export const findExecutableJobsAndEvictableJobs = async (
         REDIS_PENDING_JOB_ID_TO_LAST_UPDATE_TIME_MAP,
         jobId
       ))!;
-      const isActive = await isJobExecutable(jobId, jobCondition, jobVariables, warpSdk);
-      const isEvictable = await isJobEvictable(redisClient, jobLastUpdateTimeStr);
-      if (isActive && !isEvictable) {
-        console.log(`Find active job ${jobId} from redis, let executor to execute it!`);
+      const isExecutable = await isJobExecutable(jobId, jobCondition, jobVariables, warpSdk);
+      const isEvictable = await isJobEvictable(redisClient, warpSdk, jobLastUpdateTimeStr);
+      if (isExecutable && !isEvictable) {
+        console.log(`jobId ${jobId} found executable from redis, let executor to execute it`);
         await redisClient.sAdd(REDIS_EXECUTABLE_JOB_ID_SET, jobId);
         await redisClient.sRem(REDIS_PENDING_JOB_ID_SET, jobId);
-      } else if (!isActive && isEvictable) {
-        console.log(`Find evictable job ${jobId} from redis, let evictor to evict it!`);
+      } else if (!isExecutable && isEvictable) {
+        console.log(`jobId ${jobId} found evictable from redis, let evictor to evict it`);
         await redisClient.sAdd(REDIS_EVICTABLE_JOB_ID_SET, jobId);
         await redisClient.sRem(REDIS_PENDING_JOB_ID_SET, jobId);
-      } else if (isActive && isEvictable) {
+      } else if (isExecutable && isEvictable) {
         // when a job is both executable and evictable, we will execute it as that resolves in higher reward
         // eviction reward is 0.01 LUNA, execution reward is at least 0.01 LUNA
         console.log(
-          `Find both evictable and evictable job ${jobId} from redis, let executor to execute it!`
+          `jobId ${jobId} found both executable and evictable from redis, let executor to execute it!`
         );
         await redisClient.sAdd(REDIS_EXECUTABLE_JOB_ID_SET, jobId);
         await redisClient.sRem(REDIS_PENDING_JOB_ID_SET, jobId);

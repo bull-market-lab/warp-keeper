@@ -49,7 +49,7 @@ export const removeJobFromRedis = async (
     redisClient.hDel(REDIS_PENDING_JOB_ID_TO_LAST_UPDATE_TIME_MAP, jobId),
     redisClient.sRem(REDIS_EXECUTABLE_JOB_ID_SET, jobId),
     redisClient.sRem(REDIS_EVICTABLE_JOB_ID_SET, jobId),
-  ]).then((_) => console.log(`removed jobId ${jobId} from redis pending jobs`));
+  ]).then((_) => console.log(`jobId ${jobId} removed from redis pending jobs`));
 };
 
 export const removeJobFromEvictableSetInRedis = async (
@@ -57,7 +57,7 @@ export const removeJobFromEvictableSetInRedis = async (
   jobId: string
 ): Promise<void> => {
   await Promise.all([redisClient.sRem(REDIS_EVICTABLE_JOB_ID_SET, jobId)]).then((_) =>
-    console.log(`removed jobId ${jobId} from redis evictable jobs`)
+    console.log(`jobId ${jobId} removed from redis evictable jobs`)
   );
 };
 

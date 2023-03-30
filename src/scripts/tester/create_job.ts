@@ -58,8 +58,18 @@ const run = async () => {
     msgs: [JSON.stringify(msg)],
   };
 
+  const createJobMsgRequeueOnEvict: warp_controller.CreateJobMsg = {
+    condition: conditionAlwaysFalse,
+    name: 'test',
+    recurring: false,
+    requeue_on_evict: true,
+    vars: [],
+    reward: amount1Luna,
+    msgs: [JSON.stringify(msg)],
+  };
+
   const delayBlock = 5;
-  const blockHeightDelay = BigInt(await getCurrentBlockHeight()) + BigInt(delayBlock);
+  const blockHeightDelay = BigInt(await getCurrentBlockHeight(lcd)) + BigInt(delayBlock);
   const conditionDelay: warp_controller.Condition = {
     expr: {
       block_height: {
@@ -85,6 +95,12 @@ const run = async () => {
     create_job: createJobMsg,
   });
 
+  const cosmosMsgRequeueOnEvict = executeMsg<
+    Extract<warp_controller.ExecuteMsg, { create_job: warp_controller.CreateJobMsg }>
+  >(owner, warpSdk.contractAddress, {
+    create_job: createJobMsgRequeueOnEvict,
+  });
+
   const cosmosMsgDelayJob = executeMsg<
     Extract<warp_controller.ExecuteMsg, { create_job: warp_controller.CreateJobMsg }>
   >(owner, warpSdk.contractAddress, {
@@ -105,7 +121,7 @@ const run = async () => {
   const txOptions: CreateTxOptions = {
     // msgs: [cosmosMsg, cosmosMsg, cosmosMsgDelayJob, cosmosMsgDelayJob, cosmosMsgDelayJob],
     // msgs: [cosmosMsg, cosmosMsg, cosmosMsg, cosmosMsg, cosmosMsg, cosmosMsg, cosmosMsg, cosmosMsg, cosmosMsg, cosmosMsg, cosmosMsg, cosmosMsg, cosmosMsg,],
-    msgs: [cosmosMsg, cosmosMsg, cosmosMsg, cosmosMsg, cosmosMsg],
+    msgs: [cosmosMsg, cosmosMsg, cosmosMsgRequeueOnEvict, cosmosMsgRequeueOnEvict],
   };
 
   const tx = await wallet

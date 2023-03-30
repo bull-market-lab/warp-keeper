@@ -69,7 +69,7 @@ export const executeJob = async (
   await wallet
     .createAndSignTx(txOptions)
     .then((tx) => broadcastTx(wallet, mnemonicKey, tx))
-    .then((_) => console.log(`done executing job ${jobId}`))
+    .then((_) => console.log(`jobId ${jobId} done executed`))
     .catch((e) => {
       printAxiosError(e);
       throw e;
@@ -108,7 +108,7 @@ export const evictJob = async (
   await wallet
     .createAndSignTx(txOptions)
     .then((tx) => broadcastTx(wallet, mnemonicKey, tx))
-    .then((_) => console.log(`done evicting job ${jobId}`))
+    .then((_) => console.log(`jobId ${jobId} done evicted`))
     .catch((e) => {
       printAxiosError(e);
       throw e;
@@ -151,7 +151,7 @@ export const executeAndEvictJob = async (
     const allExecutableJobIds: string[] = await redisClient.sMembers(REDIS_EXECUTABLE_JOB_ID_SET);
     for (let i = allExecutableJobIds.length - 1; i >= 0; i--) {
       const jobId: string = allExecutableJobIds[i]!;
-      console.log(`Find executable job ${jobId} from redis, try executing!`);
+      console.log(`jobId ${jobId} found executable from redis, try executing it`);
 
       const jobVariables = await getJobVariablesFromRedis(redisClient, jobId);
       const currentAccountSequence = await getAccountSequenceFromRedis(redisClient);
@@ -174,7 +174,7 @@ export const executeAndEvictJob = async (
     const allEvictableJobIds: string[] = await redisClient.sMembers(REDIS_EVICTABLE_JOB_ID_SET);
     for (let i = allEvictableJobIds.length - 1; i >= 0; i--) {
       const jobId: string = allEvictableJobIds[i]!;
-      console.log(`Find evictable job ${jobId} from redis, try evicting!`);
+      console.log(`jobId ${jobId} found evictable from redis, try evicting it`);
 
       const currentAccountSequence = await getAccountSequenceFromRedis(redisClient);
       // even if job eviction failed, we still want to remove it from evictable set

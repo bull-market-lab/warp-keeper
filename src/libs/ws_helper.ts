@@ -42,7 +42,7 @@ export const handleJobCreation = async (
   if (exist) {
     // TODO: technically this shouldn't happen
     // all jobs created after start listening to ws should already been added to redis
-    console.log('job already in redis');
+    console.log(`jobId ${jobId} already in redis`);
   } else {
     // const conditionStr = getValueByKeyInAttributes(attributes, EVENT_ATTRIBUTE_KEY_JOB_CONDITION)
     // const condition: warp_controller.Condition = JSON.parse(conditionStr)
@@ -114,12 +114,12 @@ export const handleJobEviction = async (
   if (newStatus === JOB_STATUS_EVICTED) {
     // evicted means we should remove it
     await removeJobFromRedis(redisClient, jobId);
-    console.log('job new status is evicted, delete it from redis');
+    console.log(`jobId ${jobId} new status is evicted, delete it from redis`);
   } else {
     // add job back to redis
     const job: warp_controller.Job = await warpSdk.job(jobId);
     await saveToPendingJobSet(job, redisClient);
-    console.log('add job back to pending set');
+    console.log(`jobId ${jobId} new status is still pending, added back to pending set`);
   }
 };
 

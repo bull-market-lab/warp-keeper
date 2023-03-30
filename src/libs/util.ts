@@ -32,7 +32,7 @@ import {
 } from './env';
 import { RedisClientType } from 'redis';
 
-export const getLCD = () => {
+export const getLCD = (): LCDClient => {
   return new LCDClient({
     URL: LCD_ENDPOINT,
     chainID: CHAIN_ID,
@@ -41,18 +41,18 @@ export const getLCD = () => {
 
 // tester create job and update job, deposit / withdraw
 // non tester (keeper) execute job, evict job
-export const getMnemonicKey = (isTester = false) => {
+export const getMnemonicKey = (isTester = false): MnemonicKey => {
   if (isTester) {
     return new MnemonicKey({ mnemonic: TESTER_MNEMONIC_KEY });
   }
   return new MnemonicKey({ mnemonic: MNEMONIC_KEY });
 };
 
-export const getWallet = (lcd: LCDClient, mnemonicKey: MnemonicKey) => {
+export const getWallet = (lcd: LCDClient, mnemonicKey: MnemonicKey): Wallet => {
   return new Wallet(lcd, mnemonicKey);
 };
 
-export const initWarpSdk = (lcd: LCDClient, wallet: Wallet) => {
+export const initWarpSdk = (lcd: LCDClient, wallet: Wallet): WarpSdk => {
   const contractAddress =
     CHAIN_ID === CHAIN_ID_LOCALTERRA
       ? WARP_CONTROLLER_ADDRESS!
@@ -60,19 +60,25 @@ export const initWarpSdk = (lcd: LCDClient, wallet: Wallet) => {
   return new WarpSdk(wallet, contractAddress);
 };
 
-export const getCurrentBlockHeight = async () => {
-  const lcd = getLCD();
+export const getCurrentBlockHeight = async (lcd: LCDClient): Promise<string> => {
   return (await lcd.tendermint.blockInfo()).block.header.height;
 };
 
-export const getWebSocketClient = () => {
+export const getCurrentBlockTimeInUnixTimestampInSeconds = async (
+  lcd: LCDClient
+): Promise<number> => {
+  const blockTimeInISODateFormat = (await lcd.tendermint.blockInfo()).block.header.time;
+  const dateObj = new Date(blockTimeInISODateFormat);
+  return Math.floor(dateObj.getTime() / 1000);
+};
+
+export const getWebSocketClient = (): WebSocketClient => {
   return new WebSocketClient(WEB_SOCKET_ENDPOINT);
 };
 
 export const getWebSocketQueryWarpController = (warpControllerAddress: string) => {
   return {
     'wasm._contract_address': warpControllerAddress,
-    // 'wasm.action': 'create_job',
   };
 };
 
@@ -145,12 +151,12 @@ export const parseAccountSequenceFromStringToNumber = (sequence: string): number
   return result;
 };
 
-export const parseJobLastUpdateTimeFromStringToNumber = (lastUpdateTime: string): number => {
+export const parseTimeFromStringToNumber = (timeStr: string): number => {
+  // parse last_update_time or eviction_time (both in seconds) from string to number
   // TODO: maybe use bigint in the future
-  // but last_update_time is unix timestamp in seconds so it's not super big
-  const result = parseInt(lastUpdateTime);
+  const result = parseInt(timeStr);
   if (isNaN(result)) {
-    throw new Error(`error parsing lastUpdateTime: ${lastUpdateTime} from string to number`);
+    throw new Error(`error parsing time: ${timeStr} from string to number`);
   }
   return result;
 };

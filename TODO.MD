@@ -4,15 +4,17 @@
 MVP should be considered as completed, optimization and corner cases still need to be taken care of.
 
 ## next steps
+- test if recurring job will work
+    - event is recur_job, this logic is in reply of warp_controller
+    - need to add corresponding handler
+
 - determine if we need to block in ws. i.e. handle ws event one after another
     - i guess so, if we receive any job update event, we want to reflect that in redis as soon as possible to avoid executing executed / deleted job
-- eviction bot
 - fix eslint suggestions
 - finish all TODOs in code
 
 ## improvements
 ### function
-- test if recurring job and requeue job will work
 - race condition?
     2 tx in same block
     tx1 create job
@@ -21,6 +23,7 @@ MVP should be considered as completed, optimization and corner cases still need 
 
     potential solution: periodically empty redis and refetch all jobs from full node?
 - more error handling
+- go over each redis operation, when to delete everything vs only id
 
 ### monitor
 - integrate grafana metrics
@@ -45,8 +48,6 @@ MVP should be considered as completed, optimization and corner cases still need 
 - smart processing, only execute the job when it's profitable
 
 ### others
-- fix linting, now lint always need 1 more commit
-- styling, function parameters follow same order
 - differentiate read and write sdk for clarity
 - migrate terra.js to feather.js
 - put terrad into docker compose?
