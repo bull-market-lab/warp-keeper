@@ -6,6 +6,7 @@ import {
   parseJobRewardFromStringToNumber,
   parseJobStatusFromStringToJobStatus,
   printAxiosError,
+  sendErrorToSentry,
 } from './util';
 import { TMEvent, TMEventAttribute } from './schema';
 import {
@@ -188,6 +189,7 @@ export const processWebSocketEvent = async (
     async (event) =>
       await processEvent(event, redisClient, mnemonicKey, wallet, warpSdk).catch((e: any) => {
         printAxiosError(e);
+        sendErrorToSentry(e);
         throw e;
       })
   );

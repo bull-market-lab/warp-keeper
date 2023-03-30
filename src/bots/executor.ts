@@ -1,4 +1,3 @@
-import * as Sentry from '@sentry/node';
 import { executeAndEvictJob } from '../libs/warp_write_helper';
 import {
   disconnectRedis,
@@ -8,6 +7,7 @@ import {
   initSentry,
   initWarpSdk,
   printAxiosError,
+  sendErrorToSentry,
 } from '../libs/util';
 import { initRedisClient } from '../libs/redis_helper';
 import { REDIS_CURRENT_ACCOUNT_SEQUENCE } from '../libs/constant';
@@ -24,14 +24,6 @@ const main = async () => {
   process.on('SIGINT', async () => {
     console.log('caught interrupt signal');
     await disconnectRedis(redisClient);
-
-    // const transaction = Sentry.startTransaction({
-    //   op: "test",
-    //   name: "My First Test Transaction",
-    // });
-    Sentry.captureException(new Error('test sentry during exit'));
-    // transaction.finish();
-
     process.exit(0);
   });
 
@@ -42,6 +34,7 @@ const main = async () => {
   executeAndEvictJob(redisClient, wallet, mnemonicKey, warpSdk).catch(async (e) => {
     await disconnectRedis(redisClient);
     printAxiosError(e);
+    sendErrorToSentry(e);
     throw e;
   });
 };

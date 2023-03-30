@@ -1,4 +1,3 @@
-import * as Sentry from '@sentry/node';
 import { saveAllPendingJobs } from '../libs/warp_read_helper';
 import {
   disconnectRedis,
@@ -11,6 +10,7 @@ import {
   initSentry,
   initWarpSdk,
   printAxiosError,
+  sendErrorToSentry,
 } from '../libs/util';
 import { initRedisClient } from '../libs/redis_helper';
 import { processWebSocketEvent } from '../libs/ws_helper';
@@ -29,14 +29,6 @@ const main = async () => {
     console.log('caught interrupt signal');
     await disconnectRedis(redisClient);
     disconnectWebSocket(webSocketClient);
-
-    // const transaction = Sentry.startTransaction({
-    //   op: "test",
-    //   name: "My First Test Transaction",
-    // });
-    Sentry.captureException(new Error('test sentry during exit'));
-    // transaction.finish();
-
     process.exit(0);
   });
 
@@ -44,6 +36,7 @@ const main = async () => {
     await disconnectRedis(redisClient);
     disconnectWebSocket(webSocketClient);
     printAxiosError(e);
+    sendErrorToSentry(e);
     throw e;
   });
 

@@ -202,3 +202,12 @@ export const initSentry = (): void => {
     tracesSampleRate: 1.0,
   });
 };
+
+export const sendErrorToSentry = (e: any): void => {
+  // const transaction = Sentry.startTransaction({
+  //   op: "test",
+  //   name: "My First Test Transaction",
+  // });
+  Sentry.captureException(new Error(e));
+  // transaction.finish();
+};
