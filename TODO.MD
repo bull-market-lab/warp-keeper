@@ -46,6 +46,7 @@ MVP should be considered as completed, optimization and corner cases still need 
 
 ### profit
 - smart processing, only execute the job when it's profitable
+- after each successful execution / eviction, send the reward to designated wallet, as this bot essentially holds a hot wallet which is not super secure.
 
 ### others
 - differentiate read and write sdk for clarity

@@ -45,7 +45,7 @@
     "start-collector-prod": "node build/bots/executor.js",
     "start-monitor-prod": "node build/bots/monitor.js",
     "start-executor-prod": "node build/bots/executor.js",
-    "start-bot-docker": "docker-compose up --build",
+    "start-warp-keeper-in-docker": "docker-compose up --build",
     "create-account": "ts-node src/scripts/tester/create_account.ts",
     "deposit-account": "ts-node src/scripts/tester/deposit_account.ts",
     "withdraw-account": "ts-node src/scripts/tester/withdraw_account.ts",

@@ -17,6 +17,10 @@ export const EVENT_ATTRIBUTE_VALUE_EXECUTE_JOB = 'execute_job';
 export const EVENT_ATTRIBUTE_VALUE_EVICT_JOB = 'evict_job';
 export const EVENT_ATTRIBUTE_VALUE_DELETE_JOB = 'delete_job';
 
+// attributes for recurring job in the reply logic
+export const EVENT_ATTRIBUTE_VALUE_RECUR_JOB = 'recur_job';
+export const EVENT_ATTRIBUTE_VALUE_CREATION_STATUS = 'creation_status';
+
 export const ACTIONABLE_ACTIONS = [
   EVENT_ATTRIBUTE_VALUE_CREATE_JOB,
   EVENT_ATTRIBUTE_VALUE_UPDATE_JOB,
