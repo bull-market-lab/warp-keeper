@@ -51,6 +51,7 @@
     "withdraw-account": "ts-node src/scripts/tester/withdraw_account.ts",
     "create-job": "ts-node src/scripts/tester/create_job.ts",
     "update-job": "ts-node src/scripts/tester/update_job.ts",
+    "delete-job": "ts-node src/scripts/tester/delete_job.ts",
     "execute-job": "ts-node src/scripts/keeper/execute_job.ts",
     "evict-job": "ts-node src/scripts/keeper/evict_job.ts"
   }

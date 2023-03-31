@@ -4,12 +4,13 @@
 MVP should be considered as completed, optimization and corner cases still need to be taken care of.
 
 ## next steps
+- better logging, like centralizing log to one place, currently we log in redis_helper and ws_helper
 - test if recurring job will work
     - event is recur_job, this logic is in reply of warp_controller
     - need to add corresponding handler
-
 - determine if we need to block in ws. i.e. handle ws event one after another
     - i guess so, if we receive any job update event, we want to reflect that in redis as soon as possible to avoid executing executed / deleted job
+    - it would make log very clear if we can make it blocking
 - fix eslint suggestions
 - finish all TODOs in code
 

@@ -2,7 +2,11 @@ import { MnemonicKey, TendermintSubscriptionResponse, Wallet } from '@terra-mone
 import { warp_controller, WarpSdk } from '@terra-money/warp-sdk';
 import {
   getActionableEvents,
-  getValueByKeyInAttributes,
+  getAllValuesByKeyInAttributes,
+  getNewJobIdCreatedFromExecutingRecurringJob,
+  getProcessedJobId,
+  getUniqueValueByKeyInAttributes,
+  isExecutedJobRecurringAndNewJobCreatedSuccessfully,
   parseJobRewardFromStringToNumber,
   parseJobStatusFromStringToJobStatus,
   printAxiosError,
@@ -11,7 +15,6 @@ import {
 import { TMEvent, TMEventAttribute } from './schema';
 import {
   EVENT_ATTRIBUTE_KEY_ACTION,
-  EVENT_ATTRIBUTE_KEY_JOB_ID,
   EVENT_ATTRIBUTE_KEY_JOB_LAST_UPDATED_TIME,
   EVENT_ATTRIBUTE_KEY_JOB_REWARD,
   EVENT_ATTRIBUTE_KEY_JOB_STATUS,
@@ -54,8 +57,9 @@ export const handleJobCreation = async (
     // console.log('sleep half block in case rpc has not synced to latest state yet');
     // await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    const job: warp_controller.Job = await warpSdk.job(jobId);
+    const job = await warpSdk.job(jobId);
     await saveJob(job, redisClient);
+    console.log(`jobId ${jobId} saved to redis`);
 
     // do not try to execute job even if active
     // all execute job operation should be blocking, i can't get this ws callback work in blocking way
@@ -75,9 +79,19 @@ export const handleJobCreation = async (
 
 export const handleJobExecution = async (
   redisClient: RedisClientType,
-  jobId: string
+  warpSdk: WarpSdk,
+  jobId: string,
+  attributes: TMEventAttribute[]
 ): Promise<void> => {
   await removeJobFromRedis(redisClient, jobId);
+  if (isExecutedJobRecurringAndNewJobCreatedSuccessfully(attributes)) {
+    const newJobId = getNewJobIdCreatedFromExecutingRecurringJob(attributes);
+    const newJob = await warpSdk.job(newJobId);
+    await saveJob(newJob, redisClient);
+    console.log(
+      `jobId ${newJobId} is created from executing recurring jobId ${jobId}, saved to redis`
+    );
+  }
 };
 
 export const handleJobDeletion = async (
@@ -92,9 +106,14 @@ export const handleJobUpdate = async (
   redisClient: RedisClientType,
   warpSdk: WarpSdk,
   jobId: string,
-  newReward: number,
-  updatedJobLastUpdateTimeStr: string
+  attributes: TMEventAttribute[]
 ): Promise<void> => {
+  const newRewardStr = getUniqueValueByKeyInAttributes(attributes, EVENT_ATTRIBUTE_KEY_JOB_REWARD);
+  const newReward = parseJobRewardFromStringToNumber(newRewardStr);
+  const updatedJobLastUpdateTimeStr = getUniqueValueByKeyInAttributes(
+    attributes,
+    EVENT_ATTRIBUTE_KEY_JOB_LAST_UPDATED_TIME
+  );
   await updateJobRewardInRedis(redisClient, warpSdk, jobId, newReward);
   await updateJobLastUpdateTimeInRedis(redisClient, jobId, updatedJobLastUpdateTimeStr);
 };
@@ -106,8 +125,13 @@ export const handleJobEviction = async (
   redisClient: RedisClientType,
   warpSdk: WarpSdk,
   jobId: string,
-  newStatus: warp_controller.JobStatus
+  attributes: TMEventAttribute[]
 ): Promise<void> => {
+  const newStatusStr = getUniqueValueByKeyInAttributes(attributes, EVENT_ATTRIBUTE_KEY_JOB_STATUS);
+  const newStatus = parseJobStatusFromStringToJobStatus(newStatusStr);
+  // evict_job doesn't log last_update_time so we have to query job to get it
+  // updatedJobLastUpdateTimeStr = getValueByKeyInAttributes(attributes, EVENT_ATTRIBUTE_KEY_JOB_LAST_UPDATED_TIME);
+
   // theoretically status is either pending (enqueue is true and enough money to pay rent) or evicted
   // no need to update if job is pending, it should have been added to pending set earlier
   const updatedJobLastUpdateTimeStr = (await warpSdk.job(jobId)).last_update_time;
@@ -132,43 +156,22 @@ export const processEvent = async (
   warpSdk: WarpSdk
 ): Promise<void> => {
   const attributes = event.attributes;
-  let jobId = getValueByKeyInAttributes(attributes, EVENT_ATTRIBUTE_KEY_JOB_ID);
-  let jobAction = getValueByKeyInAttributes(attributes, EVENT_ATTRIBUTE_KEY_ACTION);
-  console.log(`new event from WS, jobId: ${jobId}, jobAction: ${jobAction}`);
-  let newRewardStr: string;
-  let newReward: number;
-  let newStatusStr: string;
-  let newStatus: warp_controller.JobStatus;
-  let updatedJobLastUpdateTimeStr: string;
+  let jobId = getProcessedJobId(attributes);
+  let jobActions = getAllValuesByKeyInAttributes(attributes, EVENT_ATTRIBUTE_KEY_ACTION);
+  console.log(`new event from WS, jobId: ${jobId}, jobAction: ${jobActions}`);
 
-  switch (jobAction) {
-    case EVENT_ATTRIBUTE_VALUE_CREATE_JOB:
-      handleJobCreation(redisClient, mnemonicKey, wallet, warpSdk, jobId, attributes);
-      break;
-    case EVENT_ATTRIBUTE_VALUE_EXECUTE_JOB:
-      handleJobExecution(redisClient, jobId);
-      break;
-    case EVENT_ATTRIBUTE_VALUE_DELETE_JOB:
-      handleJobDeletion(redisClient, jobId);
-      break;
-    case EVENT_ATTRIBUTE_VALUE_UPDATE_JOB:
-      newRewardStr = getValueByKeyInAttributes(attributes, EVENT_ATTRIBUTE_KEY_JOB_REWARD);
-      newReward = parseJobRewardFromStringToNumber(newRewardStr);
-      updatedJobLastUpdateTimeStr = getValueByKeyInAttributes(
-        attributes,
-        EVENT_ATTRIBUTE_KEY_JOB_LAST_UPDATED_TIME
-      );
-      handleJobUpdate(redisClient, warpSdk, jobId, newReward, updatedJobLastUpdateTimeStr);
-      break;
-    case EVENT_ATTRIBUTE_VALUE_EVICT_JOB:
-      newStatusStr = getValueByKeyInAttributes(attributes, EVENT_ATTRIBUTE_KEY_JOB_STATUS);
-      newStatus = parseJobStatusFromStringToJobStatus(newStatusStr);
-      // evict_job doesn't log last_update_time so we have to query job to get it
-      // updatedJobLastUpdateTimeStr = getValueByKeyInAttributes(attributes, EVENT_ATTRIBUTE_KEY_JOB_LAST_UPDATED_TIME);
-      handleJobEviction(redisClient, warpSdk, jobId, newStatus);
-      break;
-    default:
-      throw new Error(`unknown jobAction: ${jobAction}`);
+  if (jobActions.includes(EVENT_ATTRIBUTE_VALUE_CREATE_JOB)) {
+    handleJobCreation(redisClient, mnemonicKey, wallet, warpSdk, jobId, attributes);
+  } else if (jobActions.includes(EVENT_ATTRIBUTE_VALUE_EXECUTE_JOB)) {
+    handleJobExecution(redisClient, warpSdk, jobId, attributes);
+  } else if (jobActions.includes(EVENT_ATTRIBUTE_VALUE_DELETE_JOB)) {
+    handleJobDeletion(redisClient, jobId);
+  } else if (jobActions.includes(EVENT_ATTRIBUTE_VALUE_UPDATE_JOB)) {
+    handleJobUpdate(redisClient, warpSdk, jobId, attributes);
+  } else if (jobActions.includes(EVENT_ATTRIBUTE_VALUE_EVICT_JOB)) {
+    handleJobEviction(redisClient, warpSdk, jobId, attributes);
+  } else {
+    throw new Error(`unknown jobActions: ${jobActions}`);
   }
 };
 
@@ -179,11 +182,8 @@ export const processWebSocketEvent = async (
   wallet: Wallet,
   warpSdk: WarpSdk
 ): Promise<void> => {
-  console.log('new tx on warp_controller contract!');
   // console.log('tx log: ' + tmResponse.value.TxResult.result.log)
   // console.log('tx type type: ' + tmResponse.type);
-  // usually actionableEvents should only have 1 event, since 1 tx only has 1 wasm event
-  // TODO: check if create multiple jobs in 1 tx
   const actionableEvents = getActionableEvents(tmResponse);
   actionableEvents.forEach(
     async (event) =>

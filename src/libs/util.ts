@@ -16,8 +16,13 @@ import {
 import { TMEvent, TMEventAttribute, TMLog } from './schema';
 import {
   ACTIONABLE_ACTIONS,
+  AVAILABLE_RECURRING_JOB_CREATION_STATUS,
   CHAIN_ID_LOCALTERRA,
+  EVENT_ATTRIBUTE_KET_CREATION_STATUS,
   EVENT_ATTRIBUTE_KEY_ACTION,
+  EVENT_ATTRIBUTE_KEY_JOB_ID,
+  EVENT_ATTRIBUTE_VALUE_CREATION_STATUS_CREATED,
+  EVENT_ATTRIBUTE_VALUE_RECUR_JOB,
   EVENT_TYPE_WASM,
   VALID_JOB_STATUS,
 } from './constant';
@@ -98,6 +103,10 @@ export const getActionableEvents = (tmResponse: TendermintSubscriptionResponse):
           attribute.key === EVENT_ATTRIBUTE_KEY_ACTION &&
           ACTIONABLE_ACTIONS.includes(attribute.value)
         ) {
+          // NOTE: execute_job will trigger a reply function, resulting in 2 attribute keys being action
+          // key: action, value: execute_job; key: action, value: execute_reply
+          // if the executed job is recurring, there will be 3 attribute keys being action
+          // key: action, value: execute_job; key: action, value: execute_reply; key: action, value: recur_job
           actionableEvents.push(event);
           break;
         }
@@ -107,20 +116,42 @@ export const getActionableEvents = (tmResponse: TendermintSubscriptionResponse):
   return actionableEvents;
 };
 
-export const getValueByKeyInAttributes = (attributes: TMEventAttribute[], k: string): string => {
-  let val = '';
+// there could be duplicate key in attributes, throw exception if not found
+export const getAllValuesByKeyInAttributes = (
+  attributes: TMEventAttribute[],
+  k: string
+): string[] => {
+  let val = [];
   for (const attribute of attributes) {
     if (attribute.key === k) {
-      val = attribute.value;
-      break;
+      val.push(attribute.value);
     }
   }
-  if (val === '') {
+  if (val.length === 0) {
     throw new Error(
       `please inspect manually, value not found by key: ${k} in attributes: ${attributes}`
     );
   }
   return val;
+};
+
+// expect key to be unique, throw exception if not unique or not found
+export const getUniqueValueByKeyInAttributes = (
+  attributes: TMEventAttribute[],
+  k: string
+): string => {
+  let val = getAllValuesByKeyInAttributes(attributes, k);
+  if (val.length !== 1) {
+    throw new Error(
+      `please inspect manually, value expect to be unique by key: ${k} in attributes: ${attributes}`
+    );
+  }
+  if (val[0] === '') {
+    throw new Error(
+      `please inspect manually, value not found by key: ${k} in attributes: ${attributes}`
+    );
+  }
+  return val[0];
 };
 
 export const parseJobRewardFromStringToNumber = (reward: string): number => {
@@ -210,4 +241,51 @@ export const sendErrorToSentry = (e: any): void => {
   // });
   Sentry.captureException(new Error(e));
   // transaction.finish();
+};
+
+// return true if executed job is recurring and new job created successfully
+// it's possible when recurring job creation failed due to insufficient balance or invalid condition
+export const isExecutedJobRecurringAndNewJobCreatedSuccessfully = (
+  attributes: TMEventAttribute[]
+): boolean => {
+  const actions = getAllValuesByKeyInAttributes(attributes, EVENT_ATTRIBUTE_KEY_ACTION);
+  // only executing recurring job has recur_job action
+  if (!actions.includes(EVENT_ATTRIBUTE_VALUE_RECUR_JOB)) {
+    return false;
+  }
+  const newJobCreationStatus = getUniqueValueByKeyInAttributes(
+    attributes,
+    EVENT_ATTRIBUTE_KET_CREATION_STATUS
+  );
+  if (!AVAILABLE_RECURRING_JOB_CREATION_STATUS.includes(newJobCreationStatus)) {
+    throw new Error(
+      `unknown creation_status for created recurring job in reply: ${newJobCreationStatus}`
+    );
+  }
+  return newJobCreationStatus === EVENT_ATTRIBUTE_VALUE_CREATION_STATUS_CREATED;
+};
+
+export const getAllJobIdsInNumberAndSortInAscendingOrder = (
+  attributes: TMEventAttribute[]
+): number[] => {
+  const allJobIds = getAllValuesByKeyInAttributes(attributes, EVENT_ATTRIBUTE_KEY_JOB_ID);
+  const allJobIdsNumber = allJobIds.map((jobId) => Number(jobId));
+  allJobIdsNumber.sort();
+  return allJobIdsNumber;
+};
+
+// sometimes there are multiple jobIds in attributes, the smallest one is the processed jobId
+// e.g. in execute_job has jobId of executed job and jobId of newly created job if executed job is recurring
+export const getProcessedJobId = (attributes: TMEventAttribute[]): string => {
+  const allJobIdsNumber = getAllJobIdsInNumberAndSortInAscendingOrder(attributes);
+  return allJobIdsNumber[0].toString();
+};
+
+// there will be 3 jobId in the attributes, 2 being the old executed jobId, 1 being the newly created jobId
+// new jobId should be the biggest one cause jobId is ascending
+export const getNewJobIdCreatedFromExecutingRecurringJob = (
+  attributes: TMEventAttribute[]
+): string => {
+  const allJobIdsNumber = getAllJobIdsInNumberAndSortInAscendingOrder(attributes);
+  return allJobIdsNumber[allJobIdsNumber.length - 1].toString();
 };
