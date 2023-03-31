@@ -4,15 +4,15 @@ import {
   getLCD,
   getMnemonicKey,
   getWallet,
-  initSentry,
+  initSentryIfEnabled,
   initWarpSdk,
   printAxiosError,
-  sendErrorToSentry,
+  sendErrorToSentryIfEnabled,
 } from '../libs/util';
 import { initRedisClient, setEvictionTimeInRedis } from '../libs/redis_helper';
 
 const main = async () => {
-  initSentry();
+  initSentryIfEnabled();
   const redisClient = await initRedisClient();
   const mnemonicKey = getMnemonicKey();
   const lcd = getLCD();
@@ -30,7 +30,7 @@ const main = async () => {
   findExecutableJobsAndEvictableJobs(redisClient, warpSdk).catch(async (e) => {
     await disconnectRedis(redisClient);
     printAxiosError(e);
-    sendErrorToSentry(e);
+    sendErrorToSentryIfEnabled(e);
     throw e;
   });
 };

@@ -7,16 +7,16 @@ import {
   getWallet,
   getWebSocketClient,
   getWebSocketQueryWarpController,
-  initSentry,
+  initSentryIfEnabled,
   initWarpSdk,
   printAxiosError,
-  sendErrorToSentry,
+  sendErrorToSentryIfEnabled,
 } from '../libs/util';
 import { initRedisClient } from '../libs/redis_helper';
 import { processWebSocketEvent } from '../libs/ws_helper';
 
 const main = async () => {
-  initSentry();
+  initSentryIfEnabled();
 
   const redisClient = await initRedisClient();
   const mnemonicKey = getMnemonicKey();
@@ -36,7 +36,7 @@ const main = async () => {
     await disconnectRedis(redisClient);
     disconnectWebSocket(webSocketClient);
     printAxiosError(e);
-    sendErrorToSentry(e);
+    sendErrorToSentryIfEnabled(e);
     throw e;
   });
 

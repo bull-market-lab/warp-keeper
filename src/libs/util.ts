@@ -28,6 +28,7 @@ import {
 } from './constant';
 import {
   CHAIN_ID,
+  ENABLE_SENTRY,
   LCD_ENDPOINT,
   MNEMONIC_KEY,
   SENTRY_DSN,
@@ -223,24 +224,28 @@ export const disconnectWebSocket = (webSocketClient: WebSocketClient): void => {
   webSocketClient.destroy();
 };
 
-export const initSentry = (): void => {
-  Sentry.init({
-    dsn: SENTRY_DSN,
+export const initSentryIfEnabled = (): void => {
+  if (ENABLE_SENTRY) {
+    Sentry.init({
+      dsn: SENTRY_DSN,
 
-    // Set tracesSampleRate to 1.0 to capture 100%
-    // of transactions for performance monitoring.
-    // We recommend adjusting this value in production
-    tracesSampleRate: 1.0,
-  });
+      // Set tracesSampleRate to 1.0 to capture 100%
+      // of transactions for performance monitoring.
+      // We recommend adjusting this value in production
+      tracesSampleRate: 1.0,
+    });
+  }
 };
 
-export const sendErrorToSentry = (e: any): void => {
-  // const transaction = Sentry.startTransaction({
-  //   op: "test",
-  //   name: "My First Test Transaction",
-  // });
-  Sentry.captureException(new Error(e));
-  // transaction.finish();
+export const sendErrorToSentryIfEnabled = (e: any): void => {
+  if (ENABLE_SENTRY) {
+    // const transaction = Sentry.startTransaction({
+    //   op: "test",
+    //   name: "My First Test Transaction",
+    // });
+    Sentry.captureException(new Error(e));
+    // transaction.finish();
+  }
 };
 
 // return true if executed job is recurring and new job created successfully

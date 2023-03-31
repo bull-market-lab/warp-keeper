@@ -4,16 +4,16 @@ import {
   getLCD,
   getMnemonicKey,
   getWallet,
-  initSentry,
+  initSentryIfEnabled,
   initWarpSdk,
   printAxiosError,
-  sendErrorToSentry,
+  sendErrorToSentryIfEnabled,
 } from '../libs/util';
 import { initRedisClient } from '../libs/redis_helper';
 import { REDIS_CURRENT_ACCOUNT_SEQUENCE } from '../libs/constant';
 
 const main = async () => {
-  initSentry();
+  initSentryIfEnabled();
 
   const redisClient = await initRedisClient();
   const mnemonicKey = getMnemonicKey();
@@ -34,7 +34,7 @@ const main = async () => {
   executeAndEvictJob(redisClient, wallet, mnemonicKey, warpSdk).catch(async (e) => {
     await disconnectRedis(redisClient);
     printAxiosError(e);
-    sendErrorToSentry(e);
+    sendErrorToSentryIfEnabled(e);
     throw e;
   });
 };
