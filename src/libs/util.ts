@@ -24,6 +24,7 @@ import {
   EVENT_ATTRIBUTE_VALUE_CREATION_STATUS_CREATED,
   EVENT_ATTRIBUTE_VALUE_RECUR_JOB,
   EVENT_TYPE_WASM,
+  MIN_REWARD,
   VALID_JOB_STATUS,
 } from './constant';
 import {
@@ -166,11 +167,10 @@ export const parseJobRewardFromStringToNumber = (reward: string): number => {
 };
 
 export const isRewardSufficient = (reward: number): boolean => {
-  // TODO: set this in env, this should be an estimation on minimum gas
+  // TODO: tweak this threshold
   // if lower than minimum gas then impossible to be profitable
   // limit to at least 0.01 luna
-  // this is probably always true, as controller now force min reward to be 0.01
-  return reward / 100 > 0;
+  return reward > MIN_REWARD;
 };
 
 export const parseAccountSequenceFromStringToNumber = (sequence: string): number => {

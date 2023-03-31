@@ -10,7 +10,7 @@ import {
   parseJobRewardFromStringToNumber,
   parseJobStatusFromStringToJobStatus,
   printAxiosError,
-  sendErrorToSentry,
+  sendErrorToSentryIfEnabled,
 } from './util';
 import { TMEvent, TMEventAttribute } from './schema';
 import {
@@ -120,7 +120,6 @@ export const handleJobUpdate = async (
 
 // evict will leave job in evicted status (if no state rent cannot be paid or requeue set to false)
 // requeue set to false means job will expire after 24 hour? as anyone can try to evict a job after 24 hour
-// TODO: test eviction locally
 export const handleJobEviction = async (
   redisClient: RedisClientType,
   warpSdk: WarpSdk,
@@ -189,7 +188,7 @@ export const processWebSocketEvent = async (
     async (event) =>
       await processEvent(event, redisClient, mnemonicKey, wallet, warpSdk).catch((e: any) => {
         printAxiosError(e);
-        sendErrorToSentry(e);
+        sendErrorToSentryIfEnabled(e);
         throw e;
       })
   );

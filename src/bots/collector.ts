@@ -32,6 +32,10 @@ const main = async () => {
     process.exit(0);
   });
 
+  // TODO: benchmark how long it takes to save all pending jobs
+  // each query we get 50 pending jobs
+  // i think as long as we don't have thousands of pending jobs
+  // this should be done pretty fast (within 1 block time, i.e. 6s)
   await saveAllPendingJobs(redisClient, warpSdk).catch(async (e) => {
     await disconnectRedis(redisClient);
     disconnectWebSocket(webSocketClient);

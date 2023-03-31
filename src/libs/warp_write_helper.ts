@@ -115,10 +115,9 @@ export const evictJob = async (
     });
 };
 
-// maybe this is a bad idea, we only want to put 1 execute per tx to avoid 1 failure ruined eveyrthing
-export const batchExecuteJob = async () => {
-  // TODO:
-};
+// maybe this is a bad idea, we only want to put 1 execute per tx to avoid 1 failure ruined everything
+// also it's unlikely many jobs are executable at one moment
+export const batchExecuteJob = async () => {};
 
 const broadcastTx = async (wallet: Wallet, mnemonicKey: MnemonicKey, tx: Tx): Promise<void> => {
   if (!ENABLE_SKIP) {

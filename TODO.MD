@@ -39,6 +39,7 @@ MVP should be considered as completed, optimization and corner cases still need 
 ### profit
 - [must do] smart processing, only execute the job when it's profitable
 - [must do] after each successful execution / eviction, send the reward to designated wallet, as this bot essentially holds a hot wallet which is not super secure.
+- [must do] now we just check the pending jobs by their id in descending order, in the future we may want to try by the order of reward size, but we don't want the competition to be too strong, maybe prefer 2nd or 3rd highest reward.
 
 ### others
 - differentiate read and write sdk for clarity
