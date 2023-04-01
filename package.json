@@ -52,6 +52,7 @@
     "create-job": "ts-node src/scripts/tester/create_job.ts",
     "update-job": "ts-node src/scripts/tester/update_job.ts",
     "delete-job": "ts-node src/scripts/tester/delete_job.ts",
+    "custom-action": "ts-node src/scripts/tester/custom_action.ts",
     "execute-job": "ts-node src/scripts/keeper/execute_job.ts",
     "evict-job": "ts-node src/scripts/keeper/evict_job.ts"
   }

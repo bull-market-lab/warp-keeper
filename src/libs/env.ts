@@ -4,7 +4,7 @@ import { env } from 'process';
 dotenv.config();
 
 export const LCD_ENDPOINT: string = env.LCD_ENDPOINT!;
-export const WEB_SOCKET_ENDPOINT: string = env.WEB_SOCKET_ENDPOINT!;
+export const WEBSOCKET_ENDPOINT: string = env.WEBSOCKET_ENDPOINT!;
 export const CHAIN_ID: string = env.CHAIN_ID!;
 // MNEMONIC_KEY of the account use by bot
 export const MNEMONIC_KEY: string = env.MNEMONIC_KEY!;

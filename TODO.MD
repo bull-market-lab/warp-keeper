@@ -4,24 +4,22 @@
 MVP should be considered as completed, optimization and corner cases still need to be taken care of.
 
 ## next steps
-- determine if we need to block in ws. i.e. handle ws event one after another
-    - i guess so, if we receive any job update event, we want to reflect that in redis as soon as possible to avoid executing executed / deleted job
-    - it would make log very clear if we can make it blocking
+- before executor actually executing a job, check condition again to make sure?
+    - what's the cost of trying to execute an already executed job, need to test in testnet
+- race condition?
+    - create job and delete job in same tx
+        - in order to delete a job we need to know the jobId, jobId is unknown until job is created, but we can guess the jobId so it's possible to create then delete in same tx, but why would anyone do that just to waste money?
+            - however this might crash the bot, delete job event processed first, create job event handled later, resulting in executor trying to execute an already deleted job
+    - create job in tx1 and delete job in tx2
+- go over each redis operation, when to delete everything vs only id
 - fix eslint suggestions
 - finish all TODOs in code
-- race condition?
-    - 2 tx in same block, tx1 create job, tx2 delete job, tx2 get processed before tx1 completes, then we fail to process tx2 and left tx1 in limbo
-    - potential solution: periodically empty redis and refetch all jobs from full node?
-- go over each redis operation, when to delete everything vs only id
-- better logging, like centralizing log to one place, currently we log in redis_helper and ws_helper
 
 ## improvements
 ### monitor
-- [must do] go over all place where we might throw exception
-- [must do] setup pager duty to alert when bot / ws down
-    - pager duty doesn't have small business plan, use sentry instead
 - [must do] able to detect contract migration (that leads to schema change / api breaking change )
 - integrate grafana metrics
+- a;ert when no heartbeat
 
 ### performance
 - add more to cache (condition, template, etc)

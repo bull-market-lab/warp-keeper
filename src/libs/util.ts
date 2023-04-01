@@ -35,7 +35,7 @@ import {
   SENTRY_DSN,
   TESTER_MNEMONIC_KEY,
   WARP_CONTROLLER_ADDRESS,
-  WEB_SOCKET_ENDPOINT,
+  WEBSOCKET_ENDPOINT,
 } from './env';
 import { RedisClientType } from 'redis';
 
@@ -80,7 +80,7 @@ export const getCurrentBlockTimeInUnixTimestampInSeconds = async (
 };
 
 export const getWebSocketClient = (): WebSocketClient => {
-  return new WebSocketClient(WEB_SOCKET_ENDPOINT);
+  return new WebSocketClient(WEBSOCKET_ENDPOINT);
 };
 
 export const getWebSocketQueryWarpController = (warpControllerAddress: string) => {

@@ -144,9 +144,7 @@ export const executeAndEvictJob = async (
   mnemonicKey: MnemonicKey,
   warpSdk: WarpSdk
 ): Promise<void> => {
-  let counter = 0;
   while (true) {
-    // console.log(`executable jobs count ${await redisClient.sCard(REDIS_EXECUTABLE_JOB_ID_SET)}`);
     const allExecutableJobIds: string[] = await redisClient.sMembers(REDIS_EXECUTABLE_JOB_ID_SET);
     for (let i = allExecutableJobIds.length - 1; i >= 0; i--) {
       const jobId: string = allExecutableJobIds[i]!;
@@ -164,7 +162,9 @@ export const executeAndEvictJob = async (
         currentAccountSequence,
         warpSdk
       ).finally(async () => {
-        await removeJobFromRedis(redisClient, jobId);
+        await removeJobFromRedis(redisClient, jobId).then((_) =>
+          console.log(`jobId ${jobId} removed from all redis`)
+        );
         // TODO: only increment sequence when tx fail or succeed, if tx is invalid do nothing
         await incrementAccountSequenceInRedis(redisClient, currentAccountSequence);
       });
@@ -180,15 +180,14 @@ export const executeAndEvictJob = async (
       // as we rather miss than trying to evict non evictable job to waste money
       await evictJob(jobId, wallet, mnemonicKey, currentAccountSequence, warpSdk).finally(
         async () => {
-          await removeJobFromEvictableSetInRedis(redisClient, jobId);
+          await removeJobFromEvictableSetInRedis(redisClient, jobId).then((_) =>
+            console.log(`jobId ${jobId} removed from redis evictable jobs`)
+          );
           // TODO: only increment sequence when tx fail or succeed, if tx is invalid do nothing
           await incrementAccountSequenceInRedis(redisClient, currentAccountSequence);
         }
       );
     }
-
-    // console.log(`loop ${counter}, sleep to avoid stack overflow`);
     await new Promise((resolve) => setTimeout(resolve, EXECUTOR_SLEEP_MILLISECONDS));
-    counter++;
   }
 };

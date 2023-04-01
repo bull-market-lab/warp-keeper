@@ -29,7 +29,7 @@ services:
     environment:
       - REDIS_ENDPOINT=redis://redis:6379
       - LCD_ENDPOINT=http://host.docker.internal:1317
-      - WEB_SOCKET_ENDPOINT=ws://host.docker.internal:26657/websocket
+      - WEBSOCKET_ENDPOINT=ws://host.docker.internal:26657/websocket
     depends_on:
       - redis
     networks:
@@ -41,7 +41,7 @@ services:
     environment:
       - REDIS_ENDPOINT=redis://redis:6379
       - LCD_ENDPOINT=http://host.docker.internal:1317
-      - WEB_SOCKET_ENDPOINT=ws://host.docker.internal:26657/websocket
+      - WEBSOCKET_ENDPOINT=ws://host.docker.internal:26657/websocket
     depends_on:
       - redis
     networks:
@@ -53,7 +53,7 @@ services:
     environment:
       - REDIS_ENDPOINT=redis://redis:6379
       - LCD_ENDPOINT=http://host.docker.internal:1317
-      - WEB_SOCKET_ENDPOINT=ws://host.docker.internal:26657/websocket
+      - WEBSOCKET_ENDPOINT=ws://host.docker.internal:26657/websocket
     depends_on:
       - redis
     networks:

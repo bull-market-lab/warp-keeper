@@ -13,7 +13,7 @@ const run = async () => {
       return warp_account.account;
     });
 
-  const amount = (100_000_000).toString();
+  const amount = (1_000_000_000).toString();
 
   warpSdk
     .depositToAccount(wallet.key.accAddress, warpAccountAddress, LUNA, amount)

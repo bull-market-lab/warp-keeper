@@ -9,8 +9,6 @@ import {
   isExecutedJobRecurringAndNewJobCreatedSuccessfully,
   parseJobRewardFromStringToNumber,
   parseJobStatusFromStringToJobStatus,
-  printAxiosError,
-  sendErrorToSentryIfEnabled,
 } from './util';
 import { TMEvent, TMEventAttribute } from './schema';
 import {
@@ -59,7 +57,6 @@ export const handleJobCreation = async (
 
     const job = await warpSdk.job(jobId);
     await saveJob(job, redisClient);
-    console.log(`jobId ${jobId} saved to redis`);
 
     // do not try to execute job even if active
     // all execute job operation should be blocking, i can't get this ws callback work in blocking way
@@ -83,7 +80,9 @@ export const handleJobExecution = async (
   jobId: string,
   attributes: TMEventAttribute[]
 ): Promise<void> => {
-  await removeJobFromRedis(redisClient, jobId);
+  await removeJobFromRedis(redisClient, jobId).then((_) =>
+    console.log(`jobId ${jobId} removed from all redis`)
+  );
   if (isExecutedJobRecurringAndNewJobCreatedSuccessfully(attributes)) {
     const newJobId = getNewJobIdCreatedFromExecutingRecurringJob(attributes);
     const newJob = await warpSdk.job(newJobId);
@@ -98,7 +97,9 @@ export const handleJobDeletion = async (
   redisClient: RedisClientType,
   jobId: string
 ): Promise<void> => {
-  await removeJobFromRedis(redisClient, jobId);
+  await removeJobFromRedis(redisClient, jobId).then((_) =>
+    console.log(`jobId ${jobId} removed from all redis`)
+  );
 };
 
 // update only supports updating the job reward or job name
@@ -137,7 +138,9 @@ export const handleJobEviction = async (
   await updateJobLastUpdateTimeInRedis(redisClient, jobId, updatedJobLastUpdateTimeStr);
   if (newStatus === JOB_STATUS_EVICTED) {
     // evicted means we should remove it
-    await removeJobFromRedis(redisClient, jobId);
+    await removeJobFromRedis(redisClient, jobId).then((_) =>
+      console.log(`jobId ${jobId} removed from all redis`)
+    );
     console.log(`jobId ${jobId} new status is evicted, delete it from redis`);
   } else {
     // add job back to redis
@@ -159,16 +162,18 @@ export const processEvent = async (
   let jobActions = getAllValuesByKeyInAttributes(attributes, EVENT_ATTRIBUTE_KEY_ACTION);
   console.log(`new event from WS, jobId: ${jobId}, jobAction: ${jobActions}`);
 
+  // TODO: when jobId not exist in redis, it's probably because saveAllPendingJobs hasn't finished
+  // maybe we can sleep and retry in this case
   if (jobActions.includes(EVENT_ATTRIBUTE_VALUE_CREATE_JOB)) {
-    handleJobCreation(redisClient, mnemonicKey, wallet, warpSdk, jobId, attributes);
+    await handleJobCreation(redisClient, mnemonicKey, wallet, warpSdk, jobId, attributes);
   } else if (jobActions.includes(EVENT_ATTRIBUTE_VALUE_EXECUTE_JOB)) {
-    handleJobExecution(redisClient, warpSdk, jobId, attributes);
+    await handleJobExecution(redisClient, warpSdk, jobId, attributes);
   } else if (jobActions.includes(EVENT_ATTRIBUTE_VALUE_DELETE_JOB)) {
-    handleJobDeletion(redisClient, jobId);
+    await handleJobDeletion(redisClient, jobId);
   } else if (jobActions.includes(EVENT_ATTRIBUTE_VALUE_UPDATE_JOB)) {
-    handleJobUpdate(redisClient, warpSdk, jobId, attributes);
+    await handleJobUpdate(redisClient, warpSdk, jobId, attributes);
   } else if (jobActions.includes(EVENT_ATTRIBUTE_VALUE_EVICT_JOB)) {
-    handleJobEviction(redisClient, warpSdk, jobId, attributes);
+    await handleJobEviction(redisClient, warpSdk, jobId, attributes);
   } else {
     throw new Error(`unknown jobActions: ${jobActions}`);
   }
@@ -184,12 +189,7 @@ export const processWebSocketEvent = async (
   // console.log('tx log: ' + tmResponse.value.TxResult.result.log)
   // console.log('tx type type: ' + tmResponse.type);
   const actionableEvents = getActionableEvents(tmResponse);
-  actionableEvents.forEach(
-    async (event) =>
-      await processEvent(event, redisClient, mnemonicKey, wallet, warpSdk).catch((e: any) => {
-        printAxiosError(e);
-        sendErrorToSentryIfEnabled(e);
-        throw e;
-      })
-  );
+  for (const event of actionableEvents) {
+    await processEvent(event, redisClient, mnemonicKey, wallet, warpSdk);
+  }
 };

@@ -39,7 +39,7 @@ export const saveJob = async (
 ): Promise<void> => {
   let reward = parseJobRewardFromStringToNumber(job.reward);
   if (isRewardSufficient(reward)) {
-    saveToPendingJobSet(job, redisClient);
+    await saveToPendingJobSet(job, redisClient);
   }
 };
 
@@ -69,7 +69,7 @@ export const saveAllPendingJobs = async (
     startAfter = { _0: lastJobInPage?.reward!, _1: lastJobInPage?.id! };
   }
 
-  Promise.all(saveJobPromises).then((_) => {
+  await Promise.all(saveJobPromises).then((_) => {
     console.log(`done saving ${saveJobPromises.length} pending jobs to redis`);
   });
 };
@@ -111,9 +111,7 @@ export const findExecutableJobsAndEvictableJobs = async (
   redisClient: RedisClientType,
   warpSdk: WarpSdk
 ): Promise<void> => {
-  let counter = 0;
   while (true) {
-    // console.log(`pending jobs count ${await redisClient.sCard(REDIS_PENDING_JOB_ID_SET)}`);
     const allJobIds: string[] = await redisClient.sMembers(REDIS_PENDING_JOB_ID_SET);
     // TODO: is it possible to construct a msg to resolve multiple condition in 1 shot?
     // TODO: come up with a better algorithm to find which job to execute when there are multiple executable jobs
@@ -146,9 +144,6 @@ export const findExecutableJobsAndEvictableJobs = async (
         await redisClient.sRem(REDIS_PENDING_JOB_ID_SET, jobId);
       }
     }
-
-    // console.log(`loop ${counter}, sleep to avoid stack overflow`);
     await new Promise((resolve) => setTimeout(resolve, MONITOR_SLEEP_MILLISECONDS));
-    counter++;
   }
 };
