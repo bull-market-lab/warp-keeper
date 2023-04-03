@@ -1,59 +1,23 @@
 # warp-keeper
 
-![warp flow chart](warp_flow_chart.jpg)
-
 ## Overview
 
-### What is [Warp](https://warp.money/)
+Warp keeper is essentially a set of bots that monitor the jobs in warp protocol and execute or evict them when certain conditions are met.
 
-Warp protocol is an automation protocol for Cosmos, currently live on Terra. It allows anyone to create a job which is composed of 2 parts: a list of messages (could be any cosmos SDK or cosmwasm message) and a condition (from simple expression like after block height reach x to complex SDK or cw query). When the condition of a job is met, anyone can submit a transaction to execute the job.
+![warp flow chart](warp_flow_chart.jpg)
 
-### What is a warp keeper
-
-Warp keeper is a solution to find the executable or evictable jobs in warp and execute or evict them.
-
-#### What is eviction
-
-A job can be evicted if it's been in the pending set after a certain period of time (1 day in current setting), anyone can try to evict a job and result it in either evicted status or pending status. If the job owner set job's `enqueue_on_evict` property to true and has enough balance (0.01 LUNA in current setting), eviction will result the job in pending status, essentially job creator spent 0.01 LUNA to keep the job alive, if not eviction will result the job in evicted status, basically dead from keeper's perspective. This eviction mechanism acts as a state rent, i.e. job creator needs to pay to keep job alive so we won't infinite jobs pending and making keeper querying everything hard.
-
-### How does the keeper work
-
-You can refer to the flow chat above, on a high level, we have 3 bots running together, read and write to some redis sets.
-
-#### Redis
-
-We have 3 major redis set. We only use non duplicate data structure like set and map to make sure even if we add duplicate there won't be any issue.
-
-- `REDIS_PENDING_JOB_ID_SET` holds all pending jobs.
-- `REDIS_EXECUTABLE_JOB_ID_SET` holds all executable jobs.
-- `REDIS_EVICTABLE_JOB_ID_SET` holds all evictable jobs.
-
-#### Collector
-
-Collector will first query warp contract to save all existing jobs to redis pending set, then it opens a websocket connection to the Terra full node to process below types of event.
-
-- `create_job`: a new job is created, we will save it into our set.
-- `update_job`: an existing job is updated (now only supports updating name or reward), we will update it in our set.
-- `execute_job`: a pending job is executed, we will delete it from all sets.
-- `evict_job`: a pending job is evicted, we will check its new status, if it's pending we add it to our set, if it's evicted we delete from all sets.
-- `delete_job`: a pending job is delete, we will delete it from all sets.
-- `recur_job`: a pending job is executed, but the job is recurring, we will check its new status, if succeeds we save to pending set, otherwise delete from all sets.
-
-#### Monitor
-
-Monitor will keep scanning all jobs in the pending set and check if it becomes executable or evictable, if so add it to corresponding set.
-
-#### Executor
-
-Executor will keep scanning all jobs in the executable set and execute them, and evictable set and evict them.
-
-## Caution
-
-Although this bot should be working at this point, but I'm still tuning it to add proper error handling, analyzing it to make it more efficient and more profitable.
+For a detailed overview on what is warp and how does the keeper work, please refer to the [overview doc](OVERVIEW.MD).
 
 ## Usage
 
-1. Start your Terra full node or have access to remote node, it is highly recommended to run your own node to minimize latency.
-2. Create a `.env` file, you can copy the content from `.example.env` and adjust accordingly.
-3. Make sure you have docker installed, then run `yarn start-warp-keeper-in-docker`, this will run everything (redis, collector, monitor and executor) in docker.
-4. Congrats! You are doing your part to make Warp protocol awesome!
+1. Start your own Terra full node or have access to a remote one, it is highly recommended to run your own node to minimize latency as the job is executed in a first come first win manner.
+2. Create a `.env` file, copy the content from `.example.env`, `MNEMONIC_KEY` is the key that holds fund for the keeper. You can enter your [sentry](https://sentry.io/) key to receive alert when the bot crash, you can also enable [skip](https://skip.money/) to bid your execution / eviction tx.
+3. Create a warp account, you can do it on the UI by following the [guide](https://docs.warp.money/get-started). You can also create it by running `yarn create-account`, but you need to set `TESTER_MNEMONIC_KEY` in `.env` as well cause these scripts are meant for testing originally.
+4. Start docker, then run `yarn start-warp-keeper-in-docker`, this will run everything (redis, collector, monitor and executor) in docker.
+5. Congrats! You are doing your part to make Warp protocol awesome! Watch out for any email alert from sentry in case the bot crash.
+
+## Caution
+
+Although this bot should be working at this point, I'm still tuning it to add proper error handling and try to make it more efficient and profitable.
+
+Feel free to reach me on [twitter](https://twitter.com/llllllluuc) for any questions or feedbacks.
