@@ -170,13 +170,17 @@ const run = async () => {
   for (let i = 0; i < 3; i++) {
     msgs.push(createJobCosmosMsg);
   }
-  const txOptions: CreateTxOptions = {
-    // msgs: [createJobCosmosMsg, deleteJobCosmosMsgs],
-    msgs: msgs,
-  };
 
-  const tx = await wallet
-    .createAndSignTx(txOptions)
+  const currentSequence = await wallet.sequence();
+
+  const txOptions1: CreateTxOptions & {
+    sequence: number;
+  } = {
+    msgs: [createJobCosmosMsg],
+    sequence: currentSequence,
+  };
+  const tx1 = await wallet
+    .createAndSignTx(txOptions1)
     .then((tx) => {
       console.log(`successfully created tx: ${tx}`);
       return tx;
@@ -186,9 +190,37 @@ const run = async () => {
       printAxiosError(e);
       throw e;
     });
+  wallet.lcd.tx
+    .broadcast(tx1)
+    .then((result) => {
+      console.log(`successfully broadcasted tx, result: ${result}`);
+      return result;
+    })
+    .catch((e) => {
+      console.log('error broadcast');
+      printAxiosError(e);
+      throw e;
+    });
 
-  const result = await wallet.lcd.tx
-    .broadcast(tx)
+  const txOptions2: CreateTxOptions & {
+    sequence: number;
+  } = {
+    msgs: [createJobCosmosMsg],
+    sequence: currentSequence + 1,
+  };
+  const tx2 = await wallet
+    .createAndSignTx(txOptions2)
+    .then((tx) => {
+      console.log(`successfully created tx: ${tx}`);
+      return tx;
+    })
+    .catch((e) => {
+      console.log('error createAndSignTx');
+      printAxiosError(e);
+      throw e;
+    });
+  wallet.lcd.tx
+    .broadcast(tx2)
     .then((result) => {
       console.log(`successfully broadcasted tx, result: ${result}`);
       return result;

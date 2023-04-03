@@ -85,7 +85,11 @@ export const getWebSocketClient = (): WebSocketClient => {
 
 export const getWebSocketQueryWarpController = (warpControllerAddress: string) => {
   return {
+    // query at tx level
     'wasm._contract_address': warpControllerAddress,
+    // query at block level, note this doesn't work as block data only contains tx hash
+    // we need to call getTxByHash to get the actual tx data, which is too slow
+    // 'CONTAINS': warpControllerAddress
   };
 };
 
@@ -207,10 +211,20 @@ export const parseJobStatusFromStringToJobStatus = (
 // most of time it should be cause axios error is the one returned when we call lcd
 export const printAxiosError = (e: any) => {
   if (axios.isAxiosError(e)) {
-    console.log(
-      // @ts-ignore
-      `Code=${e.response!.data['code']} Message=${e.response!.data['message']} \n`
-    );
+    if (e.response) {
+      console.log(e.response.status);
+      console.log(e.response.headers);
+      if (
+        typeof e.response.data === 'object' &&
+        e.response.data !== null &&
+        'code' in e.response.data &&
+        'message' in e.response.data
+      ) {
+        console.log(`Code=${e.response?.data['code']} Message=${e.response?.data['message']} \n`);
+      } else {
+        console.log(e.response.data);
+      }
+    }
   } else {
     console.log(e);
   }

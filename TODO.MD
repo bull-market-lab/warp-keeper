@@ -33,6 +33,9 @@ MVP should be considered as completed, optimization and corner cases still need 
 - make build and docker more efficient, now i just copy everything to 4 bots
   - it works but it takes a long time to build
     maybe yarn install outside docker then copy node modules over
+- differentiate read and write sdk
+  - read sdk gets data from mantlemint (a read only node)
+  - write sdk gets data from regular full node
 
 ### profit
 

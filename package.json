@@ -36,7 +36,7 @@
     "lint": "yarn format-check && eslint . && yarn build",
     "clean": "yarn tsc --build --clean && rm -rf build",
     "build": "yarn clean && tsc",
-    "start-redis": "yarn reset-redis && redis-server",
+    "start-redis": "redis-server",
     "start-redis-cli": "redis-cli",
     "reset-redis": "rm dump.rdb",
     "start-collector-dev": "ts-node src/bots/collector.ts",
