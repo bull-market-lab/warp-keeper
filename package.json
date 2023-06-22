@@ -21,7 +21,7 @@
     "@sentry/tracing": "^7.44.2",
     "@skip-mev/skipjs": "^1.4.0",
     "@terra-money/terra.js": "^3.1.7",
-    "@terra-money/warp-sdk": "^0.1.21",
+    "@terra-money/warp-sdk": "^0.1.30",
     "redis": "^4.6.4"
   },
   "lint-staged": {
@@ -45,15 +45,6 @@
     "start-collector-prod": "node build/bots/executor.js",
     "start-monitor-prod": "node build/bots/monitor.js",
     "start-executor-prod": "node build/bots/executor.js",
-    "start-warp-keeper-in-docker": "docker-compose up --build",
-    "create-account": "ts-node src/scripts/tester/create_account.ts",
-    "deposit-account": "ts-node src/scripts/tester/deposit_account.ts",
-    "withdraw-account": "ts-node src/scripts/tester/withdraw_account.ts",
-    "create-job": "ts-node src/scripts/tester/create_job.ts",
-    "update-job": "ts-node src/scripts/tester/update_job.ts",
-    "delete-job": "ts-node src/scripts/tester/delete_job.ts",
-    "custom-action": "ts-node src/scripts/tester/custom_action.ts",
-    "execute-job": "ts-node src/scripts/keeper/execute_job.ts",
-    "evict-job": "ts-node src/scripts/keeper/evict_job.ts"
+    "start-warp-keeper-in-docker": "docker-compose up --build"
   }
 }

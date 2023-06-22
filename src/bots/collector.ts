@@ -46,7 +46,7 @@ const main = async () => {
 
   // only start web socket after saved all pending jobs, this might lose the jobs created during this period
   // but should avoid some unexpected error i.e. job haven't been saved but triggered ws event
-  const queryWarpController = getWebSocketQueryWarpController(warpSdk.contractAddress);
+  const queryWarpController = getWebSocketQueryWarpController(warpSdk.controllerContract);
   // TODO: surround this with try catch to close connection
   webSocketClient.subscribeTx(
     queryWarpController,

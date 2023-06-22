@@ -56,7 +56,7 @@ export const executeJob = async (
   };
   const msg = executeMsg<
     Extract<warp_controller.ExecuteMsg, { execute_job: warp_controller.ExecuteJobMsg }>
-  >(wallet.key.accAddress, warpSdk.contractAddress, {
+  >(wallet.key.accAddress, warpSdk.controllerContract, {
     execute_job: executeJobMsg,
   });
 
@@ -95,7 +95,7 @@ export const evictJob = async (
   };
   const msg = executeMsg<
     Extract<warp_controller.ExecuteMsg, { evict_job: warp_controller.EvictJobMsg }>
-  >(wallet.key.accAddress, warpSdk.contractAddress, {
+  >(wallet.key.accAddress, warpSdk.controllerContract, {
     evict_job: evictJobMsg,
   });
 

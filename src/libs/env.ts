@@ -10,7 +10,9 @@ export const CHAIN_ID: string = env.CHAIN_ID!;
 export const MNEMONIC_KEY: string = env.MNEMONIC_KEY!;
 // MNEMONIC_KEY of the account use by tester, tester will create job for bot to execute
 export const TESTER_MNEMONIC_KEY: string = env.TESTER_MNEMONIC_KEY!;
+
 export const WARP_CONTROLLER_ADDRESS: string | undefined = env.WARP_CONTROLLER_ADDRESS;
+export const WARP_RESOLVER_ADDRESS: string | undefined = env.WARP_RESOLVER_ADDRESS;
 
 export const SETTEN_PROJECT: string | undefined = env.SETTEN_PROJECT;
 export const SETTEN_KEY: string | undefined = env.SETTEN_KEY;

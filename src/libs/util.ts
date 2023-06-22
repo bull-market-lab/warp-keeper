@@ -35,6 +35,7 @@ import {
   SENTRY_DSN,
   TESTER_MNEMONIC_KEY,
   WARP_CONTROLLER_ADDRESS,
+  WARP_RESOLVER_ADDRESS,
   WEBSOCKET_ENDPOINT,
 } from './env';
 import { RedisClientType } from 'redis';
@@ -60,11 +61,15 @@ export const getWallet = (lcd: LCDClient, mnemonicKey: MnemonicKey): Wallet => {
 };
 
 export const initWarpSdk = (lcd: LCDClient, wallet: Wallet): WarpSdk => {
-  const contractAddress =
+  const controllerAddress =
     CHAIN_ID === CHAIN_ID_LOCALTERRA
       ? WARP_CONTROLLER_ADDRESS!
       : getContractAddress(getNetworkName(lcd.config.chainID), 'warp-controller')!;
-  return new WarpSdk(wallet, contractAddress);
+  const resolverAddress =
+    CHAIN_ID === CHAIN_ID_LOCALTERRA
+      ? WARP_RESOLVER_ADDRESS!
+      : getContractAddress(getNetworkName(lcd.config.chainID), 'warp-resolver')!;
+  return new WarpSdk(wallet, controllerAddress, resolverAddress);
 };
 
 export const getCurrentBlockHeight = async (lcd: LCDClient): Promise<string> => {
