@@ -12,6 +12,7 @@ For a detailed overview on what is warp and how does the keeper work, please ref
 
 1. Start your own Terra full node or have access to a remote one, it is highly recommended to run your own node to minimize latency as the job is executed in a first come first win manner.
 2. Create a `.env` file, copy the content from `.example.env`, `MNEMONIC_KEY` is the key that holds fund for the keeper. You can enter your [sentry](https://sentry.io/) key to receive alert when the bot crash, you can also enable [skip](https://skip.money/) to bid your execution / eviction tx.
+   1. You can adjust the `MIN_REWARD` value, in principal we would rather set it too high than too low, to avoid reward not able to cover tx fee.
 3. Create a warp account, you can do it on the UI by following the [guide](https://docs.warp.money/get-started).
 4. Start docker, then run `yarn start-warp-keeper-in-docker`, this will run everything (redis, collector, monitor and executor) in docker.
 5. Congrats! You are doing your part to make Warp protocol awesome! Watch out for any email alert from sentry in case the bot crash.

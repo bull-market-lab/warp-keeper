@@ -24,3 +24,5 @@ export const ENABLE_SENTRY: boolean = env.ENABLE_SENTRY === 'true';
 export const SENTRY_DSN: string = env.SENTRY_DSN!;
 
 export const REDIS_ENDPOINT: string = env.REDIS_ENDPOINT!;
+
+export const MIN_REWARD: number = parseInt(env.MIN_REWARD!);

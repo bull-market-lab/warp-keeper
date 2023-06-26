@@ -24,13 +24,13 @@ import {
   EVENT_ATTRIBUTE_VALUE_CREATION_STATUS_CREATED,
   EVENT_ATTRIBUTE_VALUE_RECUR_JOB,
   EVENT_TYPE_WASM,
-  MIN_REWARD,
   VALID_JOB_STATUS,
 } from './constant';
 import {
   CHAIN_ID,
   ENABLE_SENTRY,
   LCD_ENDPOINT,
+  MIN_REWARD,
   MNEMONIC_KEY,
   SENTRY_DSN,
   TESTER_MNEMONIC_KEY,
@@ -178,7 +178,6 @@ export const parseJobRewardFromStringToNumber = (reward: string): number => {
 export const isRewardSufficient = (reward: number): boolean => {
   // TODO: tweak this threshold
   // if lower than minimum gas then impossible to be profitable
-  // limit to at least 0.01 luna
   return reward > MIN_REWARD;
 };
 

@@ -78,8 +78,3 @@ export const REDIS_EVICTION_TIME = 'eviction_time_in_second';
 
 export const MONITOR_SLEEP_MILLISECONDS = 100;
 export const EXECUTOR_SLEEP_MILLISECONDS = 100;
-
-// in uluna, 10000 uluna = 0.01 LUNA
-// controller contract also set a min reward, now it's 0.01 LUNA as well
-// MIN_REWARD here should be >= MIN_REWARD in contract
-export const MIN_REWARD = 10000;
