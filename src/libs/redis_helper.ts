@@ -7,6 +7,7 @@ import {
   REDIS_PENDING_JOB_ID_SORTED_BY_REWARD_SET,
   REDIS_PENDING_JOB_ID_TO_CONDITION_MAP,
   REDIS_PENDING_JOB_ID_TO_LAST_UPDATE_TIME_MAP,
+  REDIS_PENDING_JOB_ID_TO_REWARD_MAP,
   REDIS_PENDING_JOB_ID_TO_VARIABLES_MAP,
 } from './constant';
 import { createClient, RedisClientType } from 'redis';
@@ -44,6 +45,7 @@ export const removeJobFromRedis = async (
   await Promise.all([
     redisClient.sRem(REDIS_PENDING_JOB_ID_SET, jobId),
     redisClient.zRem(REDIS_PENDING_JOB_ID_SORTED_BY_REWARD_SET, jobId),
+    redisClient.hDel(REDIS_PENDING_JOB_ID_TO_REWARD_MAP, jobId),
     redisClient.hDel(REDIS_PENDING_JOB_ID_TO_CONDITION_MAP, jobId),
     redisClient.hDel(REDIS_PENDING_JOB_ID_TO_VARIABLES_MAP, jobId),
     redisClient.hDel(REDIS_PENDING_JOB_ID_TO_LAST_UPDATE_TIME_MAP, jobId),
@@ -93,6 +95,7 @@ export const saveToPendingJobSet = async (
     score: reward,
     value: job.id,
   });
+  await redisClient.hSet(REDIS_PENDING_JOB_ID_TO_REWARD_MAP, job.id, reward.toString());
   await redisClient.hSet(
     REDIS_PENDING_JOB_ID_TO_CONDITION_MAP,
     job.id,

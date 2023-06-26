@@ -58,6 +58,9 @@ export const REDIS_CURRENT_ACCOUNT_SEQUENCE = 'current_account_sequence';
 
 export const REDIS_PENDING_JOB_ID_SET = 'pending_job_id_set';
 export const REDIS_PENDING_JOB_ID_SORTED_BY_REWARD_SET = 'pending_job_id_sorted_by_reward_set';
+
+export const REDIS_PENDING_JOB_ID_TO_REWARD_MAP = 'pending_job_id_to_reward_map';
+
 export const REDIS_PENDING_JOB_ID_TO_CONDITION_MAP = 'pending_job_id_to_condition_map';
 // msgs are not used, we only need id and condition and vars determine if active
 // export const REDIS_PENDING_JOB_ID_TO_MESSAGES_MAP = 'pending_job_id_to_messages_map';

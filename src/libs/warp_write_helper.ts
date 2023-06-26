@@ -13,7 +13,7 @@ import {
   EXECUTOR_SLEEP_MILLISECONDS,
   REDIS_EVICTABLE_JOB_ID_SET,
   REDIS_EXECUTABLE_JOB_ID_SET,
-  REDIS_PENDING_JOB_ID_TO_VARIABLES_MAP,
+  REDIS_PENDING_JOB_ID_TO_REWARD_MAP,
 } from './constant';
 import { ENABLE_SKIP, SKIP_RPC_ENDPOINT } from './env';
 import {
@@ -36,6 +36,7 @@ export function executeMsg<T extends {}>(
 
 export const executeJob = async (
   jobId: string,
+  jobReward: number,
   jobVariables: warp_controller.Variable[],
   wallet: Wallet,
   mnemonicKey: MnemonicKey,
@@ -66,14 +67,16 @@ export const executeJob = async (
     msgs: [msg],
     sequence,
   };
-  await wallet
-    .createAndSignTx(txOptions)
-    .then((tx) => broadcastTx(wallet, mnemonicKey, tx))
-    .then((_) => console.log(`jobId ${jobId} done executed`))
-    .catch((e) => {
-      printAxiosError(e);
-      throw e;
-    });
+
+  const tx = await wallet.createAndSignTx(txOptions);
+  const txFee = parseInt(tx.auth_info.fee.amount[0].amount);
+  if (txFee > jobReward) {
+    throw new Error(
+      `tx fee ${txFee} is greater than job reward ${jobReward}, skip the job ${jobId}`
+    );
+  } else {
+    await broadcastTx(wallet, mnemonicKey, tx);
+  }
 };
 
 export const evictJob = async (
@@ -105,14 +108,18 @@ export const evictJob = async (
     msgs: [msg],
     sequence,
   };
-  await wallet
-    .createAndSignTx(txOptions)
-    .then((tx) => broadcastTx(wallet, mnemonicKey, tx))
-    .then((_) => console.log(`jobId ${jobId} done evicted`))
-    .catch((e) => {
-      printAxiosError(e);
-      throw e;
-    });
+
+  // TODO: check eviction fee vs tx fee, now we always evict
+  const tx = await wallet.createAndSignTx(txOptions);
+  // const txFee = parseInt(tx.auth_info.fee.amount[0].amount);
+  // if (txFee > jobReward) {
+  //   throw new Error(
+  //     `tx fee ${txFee} is greater than job reward ${jobReward}, skip the job ${jobId}`
+  //   );
+  // } else {
+  //   await broadcastTx(wallet, mnemonicKey, tx);
+  // }
+  await broadcastTx(wallet, mnemonicKey, tx);
 };
 
 // maybe this is a bad idea, we only want to put 1 execute per tx to avoid 1 failure ruined everything
@@ -151,23 +158,30 @@ export const executeAndEvictJob = async (
       console.log(`jobId ${jobId} found executable from redis, try executing it`);
 
       const jobVariables = await getJobVariablesFromRedis(redisClient, jobId);
+      const jobReward = parseInt(
+        (await redisClient.hGet(REDIS_PENDING_JOB_ID_TO_REWARD_MAP, jobId))!
+      );
       const currentAccountSequence = await getAccountSequenceFromRedis(redisClient);
-      // even if job execution failed, we still want to remove it from executable set
-      // as we rather miss than trying to execute non executable job to waste money
       await executeJob(
         jobId,
+        jobReward,
         jobVariables,
         wallet,
         mnemonicKey,
         currentAccountSequence,
         warpSdk
-      ).finally(async () => {
-        await removeJobFromRedis(redisClient, jobId).then((_) =>
-          console.log(`jobId ${jobId} removed from all redis`)
-        );
-        // TODO: only increment sequence when tx fail or succeed, if tx is invalid do nothing
-        await incrementAccountSequenceInRedis(redisClient, currentAccountSequence);
-      });
+      )
+        .then(async () => {
+          // only increment sequence when tx successfully broadcasted
+          await incrementAccountSequenceInRedis(redisClient, currentAccountSequence);
+        })
+        .finally(async () => {
+          // even if job execution failed, we still want to remove it from executable set
+          // as we rather miss than trying to execute non executable job to waste money
+          await removeJobFromRedis(redisClient, jobId).then((_) =>
+            console.log(`jobId ${jobId} removed from all redis`)
+          );
+        });
     }
 
     const allEvictableJobIds: string[] = await redisClient.sMembers(REDIS_EVICTABLE_JOB_ID_SET);
@@ -176,18 +190,20 @@ export const executeAndEvictJob = async (
       console.log(`jobId ${jobId} found evictable from redis, try evicting it`);
 
       const currentAccountSequence = await getAccountSequenceFromRedis(redisClient);
-      // even if job eviction failed, we still want to remove it from evictable set
-      // as we rather miss than trying to evict non evictable job to waste money
-      await evictJob(jobId, wallet, mnemonicKey, currentAccountSequence, warpSdk).finally(
-        async () => {
+      await evictJob(jobId, wallet, mnemonicKey, currentAccountSequence, warpSdk)
+        .then(async () => {
+          // only increment sequence when tx successfully broadcasted
+          await incrementAccountSequenceInRedis(redisClient, currentAccountSequence);
+        })
+        .finally(async () => {
+          // even if job eviction failed, we still want to remove it from evictable set
+          // as we rather miss than trying to evict non evictable job to waste money
           await removeJobFromEvictableSetInRedis(redisClient, jobId).then((_) =>
             console.log(`jobId ${jobId} removed from redis evictable jobs`)
           );
-          // TODO: only increment sequence when tx fail or succeed, if tx is invalid do nothing
-          await incrementAccountSequenceInRedis(redisClient, currentAccountSequence);
-        }
-      );
+        });
     }
+
     await new Promise((resolve) => setTimeout(resolve, EXECUTOR_SLEEP_MILLISECONDS));
   }
 };
