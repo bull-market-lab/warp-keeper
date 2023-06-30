@@ -2,7 +2,7 @@
 
 ## What is [Warp](https://warp.money/)
 
-Warp protocol is an automation protocol for Cosmos, currently live on Terra. It allows anyone to create a job which is composed of 2 parts: a list of messages (could be any cosmos SDK or cosmwasm message) and a condition (from simple expression like after block height reach x to complex SDK or cw query). When the condition of a job is met, anyone can submit a transaction to execute the job.
+Warp protocol is an automation protocol for [Cosmos](https://cosmos.network/). It allows anyone to create a job which is composed of 2 parts: a list of messages (could be any cosmos SDK or cosmwasm message) and a condition (from simple expression like after block height reach x to complex SDK or cw query). When the condition of a job is met, anyone can submit a transaction to execute the job.
 
 ### What is a warp keeper
 
@@ -10,7 +10,7 @@ Warp keeper is a solution to find the executable or evictable jobs in warp and e
 
 ### What is eviction
 
-A job can be evicted if it's been in the pending set after a certain period of time (1 day in current setting), anyone can try to evict a job and result it in either evicted status or pending status. If the job owner set job's `enqueue_on_evict` property to true and has enough balance (0.01 LUNA in current setting), eviction will result the job in pending status, essentially job creator spent 0.01 LUNA to keep the job alive, if not eviction will result the job in evicted status, basically dead from keeper's perspective. This eviction mechanism acts as a state rent, i.e. job creator needs to pay to keep job alive so we won't infinite jobs pending and making keeper querying everything hard.
+A job can be evicted if it's been in the pending set after a certain period of time (1 day in current setting), anyone (most likely keeper) can try to evict a job and result it in either evicted status or pending status. If the job owner set job's `enqueue_on_evict` property to true and has enough balance (0.05 LUNA in current setting), eviction will keep the job in pending status, essentially job creator spent 0.05 LUNA to keep the job alive everyday, if creator doesn't enough money, eviction will result the job in evicted status, essentially dead from keeper's perspective. This eviction mechanism acts as a state rent, i.e. job creator needs to pay everyday to keep job alive so there won't be infinite pending jobs and making keeper checking them for free.
 
 ## How does the keeper work
 
@@ -44,3 +44,5 @@ Monitor will keep scanning all jobs in the pending set and check if it becomes e
 ### Executor
 
 Executor will keep scanning all jobs in the executable set and execute them, and evictable set and evict them.
+
+- NOTE: before actually submitting the transaction to execute the job, executor will first simulate executing the job to get the estimated transaction fee of executing it, if the fee is higher than the reward, executor will ignore the job because executing it would not be profitable.

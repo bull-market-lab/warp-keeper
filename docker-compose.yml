@@ -17,7 +17,10 @@ services:
   #   entrypoint: /entrypoint.sh
   #   command: terrad start
   redis:
-    image: redis:latest
+    # https://github.com/llllllluc/warp-keeper/issues/4
+    # latest version at the time of writing is 7 and it has some weird issue, using 6 seems to work fine
+    # image: redis:latest
+    image: redis:6
     networks:
       - warp-keeper-network
     ports:
